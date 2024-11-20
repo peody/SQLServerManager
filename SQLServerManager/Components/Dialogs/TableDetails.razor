@@ -1,0 +1,206 @@
+﻿@page "/table/{Database}/{Schema}/{TableName}"
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject ITableService TableService
+@inject ILogger<TableDetails> Logger
+
+<h3>Table Details: @Schema.@TableName</h3>
+
+@if (tableInfo == null || queryResult == null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <h4>Columns (@tableInfo.Columns?.Count ?? 0)</h4>
+            @if (tableInfo?.Columns != null && tableInfo.Columns.Any())
+            {
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Nullable</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var column in tableInfo.Columns)
+                        {
+                            <tr>
+                                <td>@column.Name</td>
+                                <td>@column.DataType</td>
+                                <td>@column.IsNullable</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteColumn(column.Name)">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <button class="btn btn-primary" @onclick="ShowAddColumnModal">Add Column</button>
+        </div>
+
+        <div class="col-md-8">
+            <h4>Data (Total Rows: @queryResult.TotalRows)</h4>
+            @if (queryResult?.Columns != null && queryResult.Columns.Any())
+            {
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            @foreach (var column in queryResult.Columns)
+                            {
+                                <th>@column</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (queryResult.Rows != null && queryResult.Rows.Any())
+                        {
+                            @foreach (var row in queryResult.Rows)
+                            {
+                                <tr>
+                                    @foreach (var cell in row)
+                                    {
+                                        <td>@(cell?.ToString() ?? "null")</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="@(queryResult.Columns.Count)" class="text-center">No data available</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <Pagination CurrentPage="@currentPage" 
+                           TotalPages="@((queryResult.TotalRows + pageSize - 1) / pageSize)" 
+                           OnPageChanged="@LoadData" />
+            }
+        </div>
+    </div>
+}
+
+@if (showAddColumnModal)
+{
+    <AddColumnModal 
+        IsVisible="showAddColumnModal"
+        TableInfo="@tableInfo"
+        IsVisibleChanged="(value => showAddColumnModal = value)"
+        OnSave="@SaveNewColumn" />
+}
+
+@code {
+    [Parameter] public string Database { get; set; }
+    [Parameter] public string Schema { get; set; }
+    [Parameter] public string TableName { get; set; }
+
+    private TableInfo tableInfo;
+    private QueryResult queryResult;
+    private int currentPage = 1;
+    private int pageSize = 50;
+    private bool showAddColumnModal;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            Logger.LogInformation($"Loading table {Database}.{Schema}.{TableName}");
+            await LoadTableInfo();
+            await LoadData(1);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in OnInitializedAsync");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTableInfo()
+    {
+        try
+        {
+            tableInfo = await TableService.GetTableDetailsAsync(Database, Schema, TableName);
+            Logger.LogInformation($"Loaded table info. Column count: {tableInfo?.Columns?.Count ?? 0}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading table info");
+            throw;
+        }
+    }
+
+    private async Task LoadData(int page)
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            currentPage = page;
+            queryResult = await TableService.QueryTableDataAsync(Database, Schema, TableName, page, pageSize);
+            
+            Logger.LogInformation($"Loaded page {page}. Row count: {queryResult?.Rows?.Count ?? 0}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading data");
+            throw;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteColumn(string columnName)
+    {
+        try
+        {
+            if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete column {columnName}?"))
+                return;
+
+            await TableService.DeleteColumnAsync(Database, Schema, TableName, columnName);
+            await LoadTableInfo();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error deleting column {columnName}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}");
+        }
+    }
+
+    private void ShowAddColumnModal()
+    {
+        showAddColumnModal = true;
+    }
+
+    private void CloseAddColumnModal() 
+    {
+        showAddColumnModal = false;
+    }
+
+    private async Task SaveNewColumn(ColumnInfo newColumn)
+    {
+        try
+        {
+            await TableService.AddColumnAsync(Database, Schema, TableName, newColumn);
+            showAddColumnModal = false;
+            await LoadTableInfo();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error adding new column");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error adding column: {ex.Message}");
+        }
+    }
+}

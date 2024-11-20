@@ -1,0 +1,80 @@
+﻿@using System.ComponentModel.DataAnnotations
+@inject SqlServerService SqlServerService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<div class="row">
+    <div class="col-md-12">
+        <RadzenTemplateForm TItem="DatabaseModel" Data=@model Submit=@OnSubmit>
+            <RadzenFormField Text="Database Name" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value=@model.Name class="w-100"
+                               Required="true"
+                               RequiredText="Database name is required"
+                               MaxLength="128" />
+            </RadzenFormField>
+            <div class="row mt-3">
+                <div class="col-md-12 text-right">
+                    <RadzenButton ButtonType="ButtonType.Submit"
+                                  Text="Create"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Disabled=@(string.IsNullOrWhiteSpace(model.Name)) />
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click=@OnCancel
+                                  class="ms-1" />
+                </div>
+            </div>
+        </RadzenTemplateForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    private DatabaseModel model = new();
+
+    private class DatabaseModel
+    {
+        [Required(ErrorMessage = "Database name is required")]
+        [StringLength(128, ErrorMessage = "Name length can't be more than 128 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Only letters, numbers and underscore allowed")]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    protected override void OnInitialized()
+    {
+        model = new DatabaseModel();
+    }
+
+    private async Task OnSubmit()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Database name is required");
+                return;
+            }
+
+            if (await SqlServerService.DatabaseExistsAsync(model.Name))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Database already exists");
+                return;
+            }
+
+            await SqlServerService.CreateDatabaseAsync(model.Name);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Database created successfully");
+            DialogService.Close(true);
+            await OnClose.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private async Task OnCancel()
+    {
+        DialogService.Close(false);
+        await OnClose.InvokeAsync();
+    }
+}

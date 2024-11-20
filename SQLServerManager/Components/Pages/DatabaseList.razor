@@ -1,0 +1,150 @@
+﻿@page "/databases"
+@using SQLServerManager.Components.Dialogs
+@inject SqlServerService SqlServerService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>Databases</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>SQL Server Databases</h3>
+    <RadzenButton Text="Create New Database"
+                  Icon="add"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click=@OpenCreateDialog />
+</div>
+
+@if (databases == null)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <RadzenDataGrid Data="@databases" TItem="Database" AllowPaging="true" PageSize="5">
+        <Columns>
+            <RadzenDataGridColumn TItem="Database" Property="Name" Title="Name" Width="200px" />
+            <RadzenDataGridColumn TItem="Database" Property="CreateDate" Title="Created" Width="150px" />
+            <RadzenDataGridColumn TItem="Database" Property="SizeMB" Title="Size (MB)" Width="80px" />
+            <RadzenDataGridColumn TItem="Database" Property="State" Title="State" Width="100px" />
+            <RadzenDataGridColumn TItem="Database" Title="Actions" TextAlign="TextAlign.Center">
+                <Template Context="data">
+                    <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Light" Class="mx-1"
+                                  Click=@(() => OpenDatabaseDetails(data.Name))
+                                  Title="View Details" />
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="mx-1"
+                                  Click=@(() => OpenRenameDialog(data.Name)) />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Class="mx-1"
+                                  Click=@(() => DeleteDatabase(data.Name)) />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<Database>? databases;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDatabases();
+    }
+
+    private async Task LoadDatabases()
+    {
+        try
+        {
+            databases = await SqlServerService.GetDatabasesAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var result = await DialogService.OpenAsync<CreateDatabaseDialog>("Create Database",
+            new Dictionary<string, object>(),
+            new DialogOptions
+                {
+                    Width = "500px",
+                    Height = "auto",
+                    CloseDialogOnEsc = true,
+                    CloseDialogOnOverlayClick = false
+                });
+
+        if (result == true)
+        {
+            await LoadDatabases();
+        }
+    }
+
+    private async Task OpenRenameDialog(string databaseName)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { "CurrentName", databaseName },
+            { "OnClose", EventCallback.Factory.Create(this, async () => {
+                await LoadDatabases();
+                DialogService.Close();
+            })}
+        };
+
+        await DialogService.OpenAsync<RenameDatabaseDialog>("Rename Database", parameters,
+            new DialogOptions
+                {
+                    CloseDialogOnEsc = true,
+                    CloseDialogOnOverlayClick = false
+                });
+    }
+
+    private async Task DeleteDatabase(string databaseName)
+    {
+        var confirm = await DialogService.Confirm(
+            $"Are you sure you want to delete database '{databaseName}'?",
+            "Delete Database",
+            new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirm == true)
+        {
+            try
+            {
+                await SqlServerService.DeleteDatabaseAsync(databaseName);
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Database deleted successfully");
+                await LoadDatabases();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+            }
+        }
+    }
+
+    private async Task OpenDatabaseDetails(string databaseName)
+    {
+        try
+        {
+            var parameters = new Dictionary<string, object>
+        {
+            { "DatabaseName", databaseName }
+        };
+
+            var result = await DialogService.OpenAsync<DatabaseDetailsDialog>("Database Details",
+                parameters,
+                new DialogOptions
+                    {
+                        Width = "900px",
+                        Height = "600px",
+                        CloseDialogOnEsc = true,
+                        CloseDialogOnOverlayClick = true,
+                        ShowClose = true
+                    });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to open details: {ex.Message}");
+        }
+    }
+
+
+}

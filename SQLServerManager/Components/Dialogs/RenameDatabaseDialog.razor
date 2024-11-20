@@ -1,0 +1,70 @@
+﻿@inject SqlServerService SqlServerService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+<div class="row">
+    <div class="col-md-12">
+        <RadzenTemplateForm TItem="DatabaseModel" Data=@model Submit=@OnSubmit>
+            <RadzenFormField Text="New Database Name" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value=@model.NewName class="w-100" />
+            </RadzenFormField>
+            <div class="row mt-3">
+                <div class="col-md-12 text-right">
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Rename" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click=@OnCancel class="ms-1" />
+                </div>
+            </div>
+        </RadzenTemplateForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CurrentName { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+    private DatabaseModel model = new();
+
+    private class DatabaseModel
+    {
+        public string NewName { get; set; } = string.Empty;
+    }
+
+    private async Task OnSubmit()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(model.NewName))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "New database name is required");
+                return;
+            }
+
+            if (await SqlServerService.DatabaseExistsAsync(model.NewName))
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Database with this name already exists");
+                return;
+            }
+
+            var confirmed = await DialogService.Confirm(
+                $"Are you sure you want to rename database '{CurrentName}' to '{model.NewName}'?",
+                "Confirm Rename",
+                new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+            if (confirmed == true)
+            {
+                await SqlServerService.RenameDatabaseAsync(CurrentName, model.NewName);
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Database renamed successfully");
+                await OnClose.InvokeAsync();
+                 DialogService.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+    private async Task OnCancel()
+    {
+        await OnClose.InvokeAsync();
+        DialogService.Close(); // Thêm dòng này
+    }
+
+}

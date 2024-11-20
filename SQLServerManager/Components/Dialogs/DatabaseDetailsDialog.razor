@@ -1,0 +1,112 @@
+﻿@page "/database-details"
+@inject SqlServerService SqlServerService
+@inject NotificationService NotificationService
+
+<div class="database-details p-3">
+    @if (_loading)
+    {
+        <div class="text-center">
+            <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+        </div>
+    }
+    else if (_details != null)
+    {
+        <RadzenCard>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h4>@DatabaseName</h4>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <RadzenText TextStyle="TextStyle.Subtitle2">Basic Information</RadzenText>
+                    <RadzenStack Gap="1rem" Class="mt-2">
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body2">Owner</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_details.Owner</RadzenText>
+                        </div>
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body2">Created Date</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_details.CreateDate.ToString("g")</RadzenText>
+                        </div>
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body2">Recovery Model</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_details.RecoveryModel</RadzenText>
+                        </div>
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body2">State</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_details.State</RadzenText>
+                        </div>
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body2">Total Size</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_details.SizeInMB MB</RadzenText>
+                        </div>
+                    </RadzenStack>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="mb-3">Database Files</RadzenText>
+                    <RadzenDataGrid Data="@_details.Files" TItem="DatabaseFileInfo">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Name" Title="Name" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Type" Title="Type" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="SizeInMB" Title="Size (MB)" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="MaxSizeInMB" Title="Max Size (MB)" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="PhysicalName" Title="Physical Path" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Title="Growth">
+                                <Template Context="file">
+                                    @(file.Growth + (file.IsPercentGrowth ? "%" : " MB"))
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </div>
+            </div>
+        </RadzenCard>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            No data available for database @DatabaseName
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string DatabaseName { get; set; }
+    private DatabaseDetails _details;
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDatabaseDetails();
+    }
+
+    private async Task LoadDatabaseDetails()
+    {
+        try
+        {
+            _loading = true;
+            StateHasChanged();
+
+            _details = await SqlServerService.GetDatabaseDetailsAsync(DatabaseName);
+
+            if (_details == null)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Warning", $"No details found for database {DatabaseName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to load database details: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+}

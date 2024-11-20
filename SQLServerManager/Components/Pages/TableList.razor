@@ -1,0 +1,773 @@
+﻿@page "/tables"
+@inject ITableService TableService
+@inject IDatabaseService DatabaseService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<div class="container-fluid">
+    <h3>Database Tables</h3>
+
+    <!-- Database Selection -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="databaseSelect" class="form-label">Select Database:</label>
+                <select id="databaseSelect" class="form-select" @bind="selectedDatabase" @bind:after="LoadTables">
+                    <option value="">-- Select Database --</option>
+                    @if (databases != null)
+                    {
+                        @foreach (var db in databases)
+                        {
+                            <option value="@db">@db</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-8">
+            @if (!string.IsNullOrEmpty(selectedDatabase))
+            {
+                <button class="btn btn-success" @onclick="ShowCreateTableModal">
+                    <i class="fas fa-plus"></i> Create New Table
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (tables != null && selectedDatabase != null)
+    {
+        <!-- Tables List -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Schema</th>
+                        <th>Table Name</th>
+                        <th>Rows</th>
+                        <th>Size</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var table in tables)
+                    {
+                        <tr>
+                            <td>@table.Schema</td>
+                            <td>@table.Name</td>
+                            <td>@table.RowCount.ToString("N0")</td>
+                            <td>@((table.SizeKB / 1024.0).ToString("N2")) MB</td>
+                            <td>@table.CreateDate.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="table-actions">
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewTableData(table)">
+                                        <i class="fas fa-table"></i> Data
+                                    </button>
+                                    <button class="btn btn-info btn-sm" @onclick="() => ShowColumnsModal(table)">
+                                        <i class="fas fa-columns"></i> Columns
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" @onclick="() => ConfirmAndDeleteTable(table)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- Data of table-->
+        @if (tableData != null && DataModal)
+        {
+            <!-- Table Data View -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>@selectedTable?.Schema.@selectedTable?.Name Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    @foreach (var column in tableData.Columns)
+                                    {
+                                        <th>
+                                            @column
+                                            <button class="btn btn-link btn-sm" @onclick="() => SortBy(column)">
+                                                <i class="fas fa-sort"></i>
+                                            </button>
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in tableData.Rows)
+                                {
+                                    <tr>
+                                        @foreach (var cell in row)
+                                        {
+                                            <td>@(cell?.ToString() ?? "NULL")</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            @{
+                                var totalPages = (int)Math.Ceiling(tableData.TotalRows / (double)pageSize);
+                                for (int i = 1; i <= totalPages; i++)
+                                {
+                                    var pageNumber = i;
+                                    <li class="page-item @(currentPage == pageNumber ? "active" : "")">
+                                        <button class="page-link" @onclick="() => LoadPage(pageNumber)">@pageNumber</button>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseDataModals">Close</button>
+            </div>
+        }
+    }
+
+    <!-- Create Table Modal -->
+    @if (showCreateModal)
+    {
+        <div class="modal fade show" style="display: block" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Table</h5>
+                        <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Schema:</label>
+                                    <input type="text" class="form-control" @bind="newTable.Schema" placeholder="Default: dbo"/>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Table Name:</label>
+                                    <input type="text" class="form-control" @bind="newTable.Name" required/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Columns:</label>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Data Type</th>
+                                            <th>Length</th>
+                                            <th>Primary Key</th>
+                                            <th>Nullable</th>
+                                            <th>Identity</th>
+                                            <th>Foreign Key</th>
+                                            <th>FK Reference</th>
+                                            <th>Default</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var column in newTable.Columns)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm"
+                                                           @bind="column.Name" />
+                                                </td>
+                                                <td>
+                                                    <select class="form-select form-select-sm"
+                                                            value="@column.DataType"
+                                                            @onchange="@(e => OnDataTypeChanged(column, e.Value.ToString()))">
+                                                        @foreach (var type in dataTypes)
+                                                        {
+                                                            <option value="@type">@type</option>
+                                                        }
+                                                    </select>
+                                                </td>
+
+                                                <td>
+                                                    @if (lengthRequiredTypes.Contains(column.DataType?.ToLower()))
+                                                    {
+                                                        <input type="number" class="form-control form-control-sm"
+                                                               @bind="column.MaxLength" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <input type="number" class="form-control form-control-sm"
+                                                               disabled
+                                                               value="" />
+                                                    }
+                                                </td>
+
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input"
+                                                           @bind="column.IsPrimaryKey" />
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input"
+                                                           @bind="column.IsNullable" />
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input"
+                                                           @bind="column.IsIdentity" />
+                                                </td>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input"
+                                                           @bind="column.IsForeignKey"
+                                                           @onclick="() => OnForeignKeyChanged(column)" />
+                                                </td>
+                                                <td>
+                                                    @if (column.IsForeignKey)
+                                                    {
+                                                        <div class="d-flex gap-2">
+                                                            <select class="form-select form-select-sm" @bind="column.ForeignKeyTable">
+                                                                <option value="">Select Table</option>
+                                                                @if (tables != null)
+                                                                {
+                                                                    @foreach (var table in tables)
+                                                                    {
+                                                                        <option value="@($"{table.Schema}.{table.Name}")">@($"{table.Schema}.{table.Name}")</option>
+                                                                    }
+                                                                }
+                                                            </select>
+                                                            @if (!string.IsNullOrEmpty(column.ForeignKeyTable))
+                                                            {
+                                                                <select class="form-select form-select-sm" @bind="column.ForeignKeyColumn">
+                                                                    <option value="">Select Column</option>
+                                                                    @foreach (var fkColumn in GetForeignKeyColumns(column.ForeignKeyTable))
+                                                                    {
+                                                                        <option value="@fkColumn.Name">@fkColumn.Name</option>
+                                                                    }
+                                                                </select>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm"
+                                                           @bind="column.DefaultValue" />
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-danger btn-sm"
+                                                            @onclick="() => RemoveColumn(column)">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                            </div>
+                            <button class="btn btn-secondary btn-sm" @onclick="AddColumn">
+                                <i class="fas fa-plus"></i> Add Column
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModals">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="ValidateAndCreateTable">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+        
+    }
+
+    <!-- Columns Modal -->
+    <!-- Columns Modal -->
+    @if (showColumnsModal)
+    {
+        <div class="modal fade show" style="display: block" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Columns - @selectedTable?.Schema.@selectedTable?.Name</h5>
+                        <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (tableColumns != null && tableColumns.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Data Type</th>
+                                            <th>Length</th>
+                                            <th>Nullable</th>
+                                            <th>Primary Key</th>
+                                            <th>Identity</th>
+                                            <th>Foreign Key</th>
+                                            <th>Default Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var column in tableColumns)
+                                        {
+                                            <tr>
+                                                <td>@(column.Name ?? "")</td>
+                                                <td>@(column.DataType ?? "")</td>
+                                                <td>@column.MaxLength</td>
+                                                <td>@(column.IsNullable ? "Yes" : "No")</td>
+                                                <td>@(column.IsPrimaryKey ? "Yes" : "No")</td>
+                                                <td>@(column.IsIdentity ? "Yes" : "No")</td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(column.ForeignKeyTable) && !string.IsNullOrEmpty(column.ForeignKeyColumn))
+                                                    {
+                                                        <span>@column.ForeignKeyTable.@column.ForeignKeyColumn</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(column.ForeignKeyTable) && !string.IsNullOrEmpty(column.ForeignKeyColumn))
+                                                    {
+                                                        <span>@($"{column.ForeignKeyTable}.{column.ForeignKeyColumn}")</span>
+                                                    }
+                                                </td>
+
+
+                                                <td>@(column.DefaultValue ?? "")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+
+                    </div>
+                    <!-- Add this footer section -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModals">Close</button>
+                        </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+
+
+</div>
+
+@code {
+    private List<string> databases;
+    private List<TableInfo> tables;
+    private string selectedDatabase;
+    private TableInfo selectedTable;
+    private List<ColumnInfo> tableColumns;
+    private QueryResult tableData;
+    private bool loading;
+    private bool showCreateModal;
+    private bool showColumnsModal;
+    private TableInfo newTable = new() { Schema = "dbo", Columns = new List<ColumnInfo>() };
+    private int currentPage = 1;
+    private int pageSize = 50;
+    private string currentOrderBy;
+    private bool DataModal = false;
+
+    private readonly List<string> dataTypes = new()
+    {
+        "int",
+        "bigint",
+        "smallint",
+        "tinyint",
+        "varchar",
+        "nvarchar",
+        "char",
+        "nchar",
+        "datetime",
+        "datetime2",
+        "date",
+        "time",
+        "bit",
+        "decimal",
+        "float",
+        "money",
+        "text",
+        "ntext",
+        "binary",
+        "varbinary",
+        "uniqueidentifier"
+    };
+
+    private readonly List<string> lengthRequiredTypes = new()
+    {
+        "varchar", "nvarchar", "char", "nchar", "binary", "varbinary"
+    };
+    private void OnDataTypeChanged(ColumnInfo column, string newDataType)
+    {
+        column.DataType = newDataType;
+        if (!lengthRequiredTypes.Contains(newDataType.ToLower()))
+        {
+            column.MaxLength = 0;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+            databases = await DatabaseService.GetDatabasesAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading databases: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadTables()
+    {
+        if (string.IsNullOrEmpty(selectedDatabase))
+            return;
+
+        try
+        {
+            loading = true;
+            tables = await TableService.GetTablesAsync(selectedDatabase);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading tables: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ViewTableData(TableInfo table)
+    {
+        try
+        {
+            selectedTable = table;
+            currentPage = 1;
+            currentOrderBy = null;
+            DataModal = true;
+            await LoadTableData();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading table data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadPage(int page)
+    {
+        currentPage = page;
+        await LoadTableData();
+    }
+
+    private async Task LoadTableData()
+    {
+        try
+        {
+            loading = true;
+            tableData = await TableService.QueryTableDataAsync(
+                selectedDatabase,
+                selectedTable.Schema,
+                selectedTable.Name,
+                currentPage,
+                pageSize,
+                currentOrderBy
+            );
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading table data: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ShowColumnsModal(TableInfo table)
+    {
+        try
+        {
+            loading = true;
+            selectedTable = table;
+            if (table != null)
+            {
+                tableColumns = await TableService.GetColumnsAsync(
+                    selectedDatabase,
+                    table.Schema,
+                    table.Name
+                );
+            }
+            showColumnsModal = true;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading columns: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCreateTableModal()
+    {
+        newTable = new TableInfo
+            {
+                Schema = "dbo",
+                Columns = new List<ColumnInfo>
+            {
+                new ColumnInfo() // Add default first column
+            }
+            };
+        showCreateModal = true;
+    }
+
+    private void AddColumn()
+    {
+        newTable.Columns.Add(new ColumnInfo());
+    }
+
+    private void RemoveColumn(ColumnInfo column)
+    {
+        newTable.Columns.Remove(column);
+    }
+
+    private async Task ValidateAndCreateTable()
+    {
+        var errors = new List<string>();
+
+        // Validate table name
+        if (string.IsNullOrWhiteSpace(newTable.Name))
+        {
+            errors.Add("Table name is required");
+        }
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(newTable.Name, "^[a-zA-Z][a-zA-Z0-9_]*$"))
+        {
+            errors.Add("Invalid table name format");
+        }
+
+        // Validate columns
+        if (!newTable.Columns.Any())
+        {
+            errors.Add("At least one column is required");
+        }
+
+        foreach (var column in newTable.Columns)
+        {
+            if (string.IsNullOrWhiteSpace(column.Name))
+            {
+                errors.Add("Column name is required");
+            }
+            if (string.IsNullOrWhiteSpace(column.DataType))
+            {
+                errors.Add($"Data type is required for column {column.Name}");
+            }
+
+            // Chỉ kiểm tra MaxLength cho các kiểu dữ liệu yêu cầu độ dài
+            if (lengthRequiredTypes.Contains(column.DataType?.ToLower()) && column.MaxLength <= 0)
+            {
+                errors.Add($"Length is required for {column.DataType} column {column.Name}");
+            }
+
+            // Validate foreign key
+            if (column.IsForeignKey)
+            {
+                if (string.IsNullOrEmpty(column.ForeignKeyTable))
+                {
+                    errors.Add($"Foreign key table must be selected for column {column.Name}");
+                }
+                if (string.IsNullOrEmpty(column.ForeignKeyColumn))
+                {
+                    errors.Add($"Foreign key column must be selected for column {column.Name}");
+                }
+            }
+
+            // Primary key cannot be nullable
+            if (column.IsPrimaryKey && column.IsNullable)
+            {
+                errors.Add($"Primary key column {column.Name} cannot be nullable");
+            }
+        }
+
+        if (errors.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("alert", string.Join("\n", errors));
+            return;
+        }
+
+        await CreateTable();
+    }
+
+
+    private List<ColumnInfo> GetForeignKeyColumns(string tableFullName)
+    {
+        if (string.IsNullOrEmpty(tableFullName)) return new List<ColumnInfo>();
+
+        var parts = tableFullName.Split('.');
+        if (parts.Length != 2) return new List<ColumnInfo>();
+
+        var schema = parts[0];
+        var tableName = parts[1];
+
+        try
+        {
+            return TableService.GetColumnsAsync(selectedDatabase, schema, tableName).Result
+                .Where(c => c.IsPrimaryKey)
+                .ToList();
+        }
+        catch
+        {
+            return new List<ColumnInfo>();
+        }
+    }
+
+    private async Task CreateTable()
+    {
+        try
+        {
+            await TableService.CreateTableAsync(selectedDatabase, newTable);
+            await LoadTables();
+            CloseModals();
+            await JSRuntime.InvokeVoidAsync("alert", "Table created successfully");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error creating table: {ex.Message}");
+        }
+    }
+
+    private async Task ConfirmAndDeleteTable(TableInfo table)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Are you sure you want to delete the table '{table.Schema}.{table.Name}'?\n" +
+            $"This will permanently delete {table.RowCount} rows of data.");
+
+        if (confirmed)
+        {
+            try
+            {
+                await TableService.DeleteTableAsync(selectedDatabase, table.Schema, table.Name);
+                await LoadTables();
+                await JSRuntime.InvokeVoidAsync("alert", "Table deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting table: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task DeleteColumn(string columnName)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Are you sure you want to delete the column '{columnName}'?");
+
+        if (confirmed)
+        {
+            try
+            {
+                await TableService.DeleteColumnAsync(
+                    selectedDatabase,
+                    selectedTable.Schema,
+                    selectedTable.Name,
+                    columnName
+                );
+                await ShowColumnsModal(selectedTable); // Refresh columns
+                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task SortBy(string columnName)
+    {
+        if (currentOrderBy == columnName)
+        {
+            currentOrderBy = $"{columnName} DESC";
+        }
+        else
+        {
+            currentOrderBy = columnName;
+        }
+        await LoadTableData();
+    }
+
+    private void CloseModals()
+    {
+        showCreateModal = false;
+        showColumnsModal = false;
+        selectedTable = null;
+    }
+    private void CloseDataModals()
+    {
+        DataModal = false;
+    }
+    private void OnForeignKeyChanged(ColumnInfo column)
+{
+    if (!column.IsForeignKey)
+    {
+        // Reset foreign key related properties when unchecking
+        column.ForeignKeyTable = null;
+        column.ForeignKeyColumn = null;
+    }
+}
+}
+<style>
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+    }
+
+    .table-actions {
+        white-space: nowrap;
+    }
+
+    .modal-backdrop {
+        background-color: rgba(0,0,0,0.5);
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .validation-message {
+        color: red;
+        font-size: 0.8rem;
+    }
+
+    .table-details {
+        margin-bottom: 20px;
+    }
+</style>

@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+<RadzenDialog />
+<RadzenNotification />
+<RadzenContextMenu />
+<RadzenTooltip />
+
+<RadzenLayout>
+    <RadzenHeader>
+        <div class="d-flex align-items-center">
+            <RadzenSidebarToggle Click="@(() => _sidebarExpanded = !_sidebarExpanded)" />
+            <RadzenLabel Text="SQL Server Manager" Class="ms-3 h3 mb-0" />
+        </div>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="@_sidebarExpanded">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+            <RadzenPanelMenuItem Text="Databases" Icon="storage" Path="/databases" />
+            <RadzenPanelMenuItem Text="Tables" Icon="storage" Path="/tables" />
+            <RadzenPanelMenuItem Text="About" Icon="info" Path="/about" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <div class="container-fluid px-4 py-3">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    private bool _sidebarExpanded = true;
+}

@@ -1,0 +1,99 @@
+﻿@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Column</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newColumn" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <InputText @bind-Value="newColumn.Name" class="form-control" />
+                            <ValidationMessage For="@(() => newColumn.Name)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Data Type</label>
+                            <InputSelect @bind-Value="newColumn.DataType" class="form-control">
+                                @foreach (var type in dataTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => newColumn.DataType)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Max Length</label>
+                            <InputNumber @bind-Value="newColumn.MaxLength" class="form-control" />
+                            <ValidationMessage For="@(() => newColumn.MaxLength)" />
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox @bind-Value="newColumn.IsNullable" class="form-check-input" id="isNullable" />
+                            <label class="form-check-label" for="isNullable">Is Nullable</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Default Value</label>
+                            <InputText @bind-Value="newColumn.DefaultValue" class="form-control" />
+                            <ValidationMessage For="@(() => newColumn.DefaultValue)" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public TableInfo TableInfo { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback<ColumnInfo> OnSave { get; set; }
+
+    private ColumnInfo newColumn = new();
+    private string[] dataTypes = new[] { "varchar", "nvarchar", "int", "decimal", "datetime", "bit" };
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            newColumn = new ColumnInfo();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await OnSave.InvokeAsync(newColumn);
+        await CloseModal();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (IsVisible)
+        {
+            await CloseModal();
+        }
+    }
+}
