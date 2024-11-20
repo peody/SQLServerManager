@@ -13,9 +13,10 @@ namespace SQLServerManager.Services.Interfaces
         
             Task<List<ColumnInfo>> GetColumnsAsync(string databaseName, string schemaName, string tableName);
             Task<List<Dictionary<string, object>>> GetTableDataAsync(string databaseName, string schemaName, string tableName);
-        
 
-        Task<bool> AddColumnAsync(string databaseName, string schema, string tableName, ColumnInfo column);
-        Task<bool> DeleteColumnAsync(string databaseName, string schema, string tableName, string columnName);
+        Task<bool> AddColumnAsync(string database, string schema, string table, ColumnInfo column);
+        Task<bool> AlterColumnAsync(string database, string schema, string table, string originalColumnName, ColumnInfo column);
+        Task<bool> DeleteColumnAsync(string database, string schema, string table, string columnName);
+
     }
 }

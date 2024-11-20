@@ -19,7 +19,15 @@ namespace SQLServerManager.Services.Implementations
         {
             _connectionString = connectionString;
         }
-
+        private readonly List<string> lengthRequiredTypes = new()
+    {
+        "varchar",
+        "nvarchar",
+        "char",
+        "nchar",
+        "binary",
+        "varbinary"
+    };
         public async Task<List<Dictionary<string, object>>> GetTableDataAsync(string databaseName, string schemaName, string tableName)
         {
             var result = new List<Dictionary<string, object>>();
@@ -305,42 +313,89 @@ namespace SQLServerManager.Services.Implementations
             return true;
         }
 
-        public async Task<bool> AddColumnAsync(string databaseName, string schema, string tableName, ColumnInfo column)
+        public async Task<bool> AddColumnAsync(string database, string schema, string table, ColumnInfo column)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            string columnDefinition = $"{column.Name} {column.DataType}" +
-                                    $"{(column.MaxLength > 0 ? $"({column.MaxLength})" : "")}" +
-                                    $"{(column.IsNullable ? " NULL" : " NOT NULL")}" +
-                                    $"{(!string.IsNullOrEmpty(column.DefaultValue) ? $" DEFAULT {column.DefaultValue}" : "")}";
+                var sql = $"USE [{database}]; ALTER TABLE [{schema}].[{table}] ADD [{column.Name}] {column.DataType}";
 
-            string addColumnQuery = $@"
-                USE [{databaseName}];
-                ALTER TABLE [{schema}].[{tableName}]
-                ADD {columnDefinition}";
+                if (lengthRequiredTypes.Contains(column.DataType.ToLower()))
+                {
+                    sql += $"({column.MaxLength})";
+                }
 
-            using var command = new SqlCommand(addColumnQuery, connection);
-            await command.ExecuteNonQueryAsync();
+                sql += column.IsNullable ? " NULL" : " NOT NULL";
 
-            return true;
+                if (!string.IsNullOrEmpty(column.DefaultValue))
+                {
+                    sql += $" DEFAULT {column.DefaultValue}";
+                }
+
+                await using var command = new SqlCommand(sql, connection);
+                await command.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public async Task<bool> DeleteColumnAsync(string databaseName, string schema, string tableName, string columnName)
+        public async Task<bool> AlterColumnAsync(string database, string schema, string table,
+            string originalColumnName, ColumnInfo column)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            string dropColumnQuery = $@"
-                USE [{databaseName}];
-                ALTER TABLE [{schema}].[{tableName}]
-                DROP COLUMN [{columnName}]";
+                var sql = $"USE [{database}]; ALTER TABLE [{schema}].[{table}] ALTER COLUMN [{originalColumnName}] {column.DataType}";
 
-            using var command = new SqlCommand(dropColumnQuery, connection);
-            await command.ExecuteNonQueryAsync();
+                if (lengthRequiredTypes.Contains(column.DataType.ToLower()))
+                {
+                    sql += $"({column.MaxLength})";
+                }
 
-            return true;
+                sql += column.IsNullable ? " NULL" : " NOT NULL";
+
+                await using var command = new SqlCommand(sql, connection);
+                await command.ExecuteNonQueryAsync();
+
+                // If column name changed
+                if (originalColumnName != column.Name)
+                {
+                    sql = $"USE [{database}]; EXEC sp_rename '{schema}.{table}.{originalColumnName}', '{column.Name}', 'COLUMN'";
+                    await using var renameCommand = new SqlCommand(sql, connection);
+                    await renameCommand.ExecuteNonQueryAsync();
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
+        public async Task<bool> DeleteColumnAsync(string database, string schema, string table, string columnName)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var sql = $"USE [{database}]; ALTER TABLE [{schema}].[{table}] DROP COLUMN [{columnName}]";
+
+                await using var command = new SqlCommand(sql, connection);
+                await command.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

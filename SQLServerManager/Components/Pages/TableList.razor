@@ -310,6 +310,69 @@
                         <button type="button" class="btn-close" @onclick="CloseModals"></button>
                     </div>
                     <div class="modal-body">
+                        <!-- Add Column Button -->
+                        <button class="btn btn-success mb-3" @onclick="InitializeAddColumn">
+                            <i class="fas fa-plus"></i> Add New Column
+                        </button>
+
+                        @if (isAddingColumn || isEditingColumn)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    @(isAddingColumn ? "Add New Column" : "Edit Column")
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Column Name:</label>
+                                                <input type="text" class="form-control" @bind="editingColumn.Name" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Data Type:</label>
+                                                <select class="form-select" @bind="editingColumn.DataType">
+                                                    @foreach (var type in dataTypes)
+                                                    {
+                                                        <option value="@type">@type</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Length:</label>
+                                                <input type="number" class="form-control"
+                                                       @bind="editingColumn.MaxLength"
+                                                       disabled="@(!lengthRequiredTypes.Contains(editingColumn.DataType?.ToLower()))" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check mt-4">
+                                                <input type="checkbox" class="form-check-input" @bind="editingColumn.IsNullable" />
+                                                <label class="form-check-label">Nullable</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Default Value:</label>
+                                                <input type="text" class="form-control" @bind="editingColumn.DefaultValue" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button class="btn btn-primary" @onclick="SaveColumnChanges">Save</button>
+                                        <button class="btn btn-secondary" @onclick="CancelColumnEdit">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         @if (tableColumns != null && tableColumns.Any())
                         {
                             <div class="table-responsive">
@@ -320,54 +383,43 @@
                                             <th>Data Type</th>
                                             <th>Length</th>
                                             <th>Nullable</th>
-                                            <th>Primary Key</th>
-                                            <th>Identity</th>
-                                            <th>Foreign Key</th>
                                             <th>Default Value</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var column in tableColumns)
                                         {
                                             <tr>
-                                                <td>@(column.Name ?? "")</td>
-                                                <td>@(column.DataType ?? "")</td>
+                                                <td>@column.Name</td>
+                                                <td>@column.DataType</td>
                                                 <td>@column.MaxLength</td>
                                                 <td>@(column.IsNullable ? "Yes" : "No")</td>
-                                                <td>@(column.IsPrimaryKey ? "Yes" : "No")</td>
-                                                <td>@(column.IsIdentity ? "Yes" : "No")</td>
+                                                <td>@column.DefaultValue</td>
                                                 <td>
-                                                    @if (!string.IsNullOrEmpty(column.ForeignKeyTable) && !string.IsNullOrEmpty(column.ForeignKeyColumn))
-                                                    {
-                                                        <span>@column.ForeignKeyTable.@column.ForeignKeyColumn</span>
-                                                    }
+                                                    <button class="btn btn-primary btn-sm" @onclick="() => InitializeEditColumn(column)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-danger btn-sm" @onclick="() => ConfirmDeleteColumn(column)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </td>
-                                                <td>
-                                                    @if (!string.IsNullOrEmpty(column.ForeignKeyTable) && !string.IsNullOrEmpty(column.ForeignKeyColumn))
-                                                    {
-                                                        <span>@($"{column.ForeignKeyTable}.{column.ForeignKeyColumn}")</span>
-                                                    }
-                                                </td>
-
-
-                                                <td>@(column.DefaultValue ?? "")</td>
                                             </tr>
                                         }
                                     </tbody>
                                 </table>
                             </div>
                         }
-
                     </div>
-                    <!-- Add this footer section -->
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="CloseModals">Close</button>
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="modal-backdrop fade show"></div>
     }
+
 
 
 </div>
@@ -412,6 +464,10 @@
         "varbinary",
         "uniqueidentifier"
     };
+    private bool isEditingColumn = false;
+    private bool isAddingColumn = false;
+    private ColumnInfo editingColumn = new();
+    private string originalColumnName; // Để lưu tên cột gốc khi edit
 
     private readonly List<string> lengthRequiredTypes = new()
     {
@@ -741,6 +797,112 @@
         column.ForeignKeyColumn = null;
     }
 }
+    private void InitializeAddColumn()
+    {
+        editingColumn = new ColumnInfo();
+        isAddingColumn = true;
+        isEditingColumn = false;
+    }
+
+    private void InitializeEditColumn(ColumnInfo column)
+    {
+        editingColumn = new ColumnInfo
+            {
+                Name = column.Name,
+                DataType = column.DataType,
+                MaxLength = column.MaxLength,
+                IsNullable = column.IsNullable,
+                DefaultValue = column.DefaultValue
+            };
+        originalColumnName = column.Name;
+        isEditingColumn = true;
+        isAddingColumn = false;
+    }
+
+    private async Task SaveColumnChanges()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(editingColumn.Name))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Column name is required");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(editingColumn.DataType))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Data type is required");
+                return;
+            }
+
+            if (lengthRequiredTypes.Contains(editingColumn.DataType.ToLower()) && editingColumn.MaxLength <= 0)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Length is required for this data type");
+                return;
+            }
+
+            if (isAddingColumn)
+            {
+                await TableService.AddColumnAsync(
+                    selectedDatabase,
+                    selectedTable.Schema,
+                    selectedTable.Name,
+                    editingColumn
+                );
+            }
+            else
+            {
+                await TableService.AlterColumnAsync(
+                    selectedDatabase,
+                    selectedTable.Schema,
+                    selectedTable.Name,
+                    originalColumnName,
+                    editingColumn
+                );
+            }
+
+            // Refresh columns
+            await ShowColumnsModal(selectedTable);
+            CancelColumnEdit();
+            await JSRuntime.InvokeVoidAsync("alert",
+                isAddingColumn ? "Column added successfully" : "Column updated successfully");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+    private void CancelColumnEdit()
+    {
+        isAddingColumn = false;
+        isEditingColumn = false;
+        editingColumn = new ColumnInfo();
+        originalColumnName = null;
+    }
+
+    private async Task ConfirmDeleteColumn(ColumnInfo column)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete column {column.Name}?"))
+        {
+            try
+            {
+                await TableService.DeleteColumnAsync(
+                    selectedDatabase,
+                    selectedTable.Schema,
+                    selectedTable.Name,
+                    column.Name
+                );
+                await ShowColumnsModal(selectedTable);
+                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}");
+            }
+        }
+    }
+
 }
 <style>
     .loading-spinner {
