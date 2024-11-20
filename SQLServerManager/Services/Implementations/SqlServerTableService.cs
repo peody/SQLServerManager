@@ -13,8 +13,6 @@ namespace SQLServerManager.Services.Implementations
     public class SqlServerTableService : ITableService
     {
         private readonly string _connectionString;
-        
-
         public SqlServerTableService(string connectionString)
         {
             _connectionString = connectionString;
@@ -66,8 +64,7 @@ namespace SQLServerManager.Services.Implementations
             }
 
             return result;
-        }
-
+        }       
         public async Task<List<ColumnInfo>> GetColumnsAsync(string databaseName, string schema, string tableName)
         {
             var columns = new List<ColumnInfo>();
@@ -121,21 +118,11 @@ namespace SQLServerManager.Services.Implementations
 
             return columns;
         }
-
-
-
         public SqlServerTableService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         }
-
-        
-
-       
-
-        
-
         public async Task<List<TableInfo>> GetTablesAsync(string databaseName)
         {
             var tables = new List<TableInfo>();
@@ -181,7 +168,6 @@ namespace SQLServerManager.Services.Implementations
 
             return tables;
         }
-
         public async Task<TableInfo> GetTableDetailsAsync(string databaseName, string schema, string tableName)
         {
             var tableInfo = new TableInfo { Schema = schema, Name = tableName };
@@ -226,7 +212,6 @@ namespace SQLServerManager.Services.Implementations
 
             return tableInfo;
         }
-
         public async Task<QueryResult> QueryTableDataAsync(string databaseName, string schema,
     string tableName, int page = 1, int pageSize = 50, string orderBy = null)
         {
@@ -273,7 +258,6 @@ namespace SQLServerManager.Services.Implementations
 
             return result;
         }
-
         public async Task<bool> CreateTableAsync(string databaseName, TableInfo tableInfo)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -297,7 +281,6 @@ namespace SQLServerManager.Services.Implementations
 
             return true;
         }
-
         public async Task<bool> DeleteTableAsync(string databaseName, string schema, string tableName)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -312,7 +295,6 @@ namespace SQLServerManager.Services.Implementations
 
             return true;
         }
-
         public async Task<bool> AddColumnAsync(string database, string schema, string table, ColumnInfo column)
         {
             try
@@ -343,7 +325,6 @@ namespace SQLServerManager.Services.Implementations
                 return false;
             }
         }
-
         public async Task<bool> AlterColumnAsync(string database, string schema, string table,
             string originalColumnName, ColumnInfo column)
         {
@@ -378,7 +359,6 @@ namespace SQLServerManager.Services.Implementations
                 return false;
             }
         }
-
         public async Task<bool> DeleteColumnAsync(string database, string schema, string table, string columnName)
         {
             try
@@ -395,6 +375,89 @@ namespace SQLServerManager.Services.Implementations
             catch
             {
                 return false;
+            }
+        }
+        //them phan nay
+        public async Task<bool> InsertRecordAsync(string database, string schema, string table, Dictionary<string, object> record)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"USE [{database}]";
+                    await command.ExecuteNonQueryAsync();
+
+                    var columns = string.Join(", ", record.Keys);
+                    var parameters = string.Join(", ", record.Keys.Select(k => $"@{k}"));
+
+                    command.CommandText = $"INSERT INTO [{schema}].[{table}] ({columns}) VALUES ({parameters})";
+
+                    foreach (var item in record)
+                    {
+                        command.Parameters.AddWithValue($"@{item.Key}", item.Value ?? DBNull.Value);
+                    }
+
+                    await command.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+        }
+        public async Task<bool> UpdateRecordAsync(string database, string schema, string table,
+            Dictionary<string, object> newRecord, Dictionary<string, object> oldRecord)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"USE [{database}]";
+                    await command.ExecuteNonQueryAsync();
+
+                    var setClause = string.Join(", ", newRecord.Keys.Select(k => $"[{k}] = @new_{k}"));
+                    var whereClause = string.Join(" AND ", oldRecord.Keys.Select(k => $"([{k}] = @old_{k} OR (@old_{k} IS NULL AND [{k}] IS NULL))"));
+
+                    command.CommandText = $"UPDATE [{schema}].[{table}] SET {setClause} WHERE {whereClause}";
+
+                    // Add parameters for new values
+                    foreach (var item in newRecord)
+                    {
+                        command.Parameters.AddWithValue($"@new_{item.Key}", item.Value ?? DBNull.Value);
+                    }
+
+                    // Add parameters for old values (WHERE clause)
+                    foreach (var item in oldRecord)
+                    {
+                        command.Parameters.AddWithValue($"@old_{item.Key}", item.Value ?? DBNull.Value);
+                    }
+
+                    await command.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+        }
+        public async Task<bool> DeleteRecordAsync(string database, string schema, string table, Dictionary<string, object> record)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"USE [{database}]";
+                    await command.ExecuteNonQueryAsync();
+
+                    var whereClause = string.Join(" AND ", record.Keys.Select(k => $"([{k}] = @{k} OR (@{k} IS NULL AND [{k}] IS NULL))"));
+
+                    command.CommandText = $"DELETE FROM [{schema}].[{table}] WHERE {whereClause}";
+
+                    foreach (var item in record)
+                    {
+                        command.Parameters.AddWithValue($"@{item.Key}", item.Value ?? DBNull.Value);
+                    }
+
+                    await command.ExecuteNonQueryAsync();
+                    return true;
+                }
             }
         }
     }

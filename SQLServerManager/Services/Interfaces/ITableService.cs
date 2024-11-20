@@ -17,6 +17,11 @@ namespace SQLServerManager.Services.Interfaces
         Task<bool> AddColumnAsync(string database, string schema, string table, ColumnInfo column);
         Task<bool> AlterColumnAsync(string database, string schema, string table, string originalColumnName, ColumnInfo column);
         Task<bool> DeleteColumnAsync(string database, string schema, string table, string columnName);
+        // them phan nay
+        Task<bool> InsertRecordAsync(string database, string schema, string table, Dictionary<string, object> record);
+        Task<bool> UpdateRecordAsync(string database, string schema, string table,
+            Dictionary<string, object> newRecord, Dictionary<string, object> oldRecord);
+        Task<bool> DeleteRecordAsync(string database, string schema, string table, Dictionary<string, object> record);
 
     }
 }
