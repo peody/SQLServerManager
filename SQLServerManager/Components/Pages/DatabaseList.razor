@@ -1,40 +1,39 @@
-﻿@page "/databases"
-@using SQLServerManager.Components.Dialogs
-@inject SqlServerService SqlServerService
-@inject NotificationService NotificationService
+﻿@page "/databases" 
+@using SQLServerManager.Components.Dialogs 
+@inject SqlServerService SqlServerService 
+@inject NotificationService NotificationService 
 @inject DialogService DialogService
-
-<PageTitle>Databases</PageTitle>
-
+<PageTitle>Databases</PageTitle> 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>SQL Server Databases</h3>
+    <h3>SQL Server Databases</h3> 
     <RadzenButton Text="Create New Database"
                   Icon="add"
                   ButtonStyle="ButtonStyle.Primary"
-                  Click=@OpenCreateDialog />
+                  Click=@OpenCreateDialog /> 
 </div>
 
-@if (databases == null)
+@if (databases == null) 
 {
-    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" /> 
 }
 else
 {
-    <RadzenDataGrid Data="@databases" TItem="Database" AllowPaging="true" PageSize="5">
+    <RadzenDataGrid Data="@databases" TItem="Database" AllowPaging="true" PageSize="5"> 
         <Columns>
-            <RadzenDataGridColumn TItem="Database" Property="Name" Title="Name" Width="200px" />
-            <RadzenDataGridColumn TItem="Database" Property="CreateDate" Title="Created" Width="150px" />
-            <RadzenDataGridColumn TItem="Database" Property="SizeMB" Title="Size (MB)" Width="80px" />
-            <RadzenDataGridColumn TItem="Database" Property="State" Title="State" Width="100px" />
+            <RadzenDataGridColumn TItem="Database" Property="Name" Title="Name" Width="200px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="CreateDate" Title="Created" Width="150px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="SizeMB" Title="Size (MB)" Width="80px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="State" Title="State" Width="100px" /> 
             <RadzenDataGridColumn TItem="Database" Title="Actions" TextAlign="TextAlign.Center">
+                <!--// Cột hành động-->
                 <Template Context="data">
                     <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Light" Class="mx-1"
-                                  Click=@(() => OpenDatabaseDetails(data.Name))
+                                  Click=@(() => OpenDatabaseDetails(data.Name)) 
                                   Title="View Details" />
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="mx-1"
-                                  Click=@(() => OpenRenameDialog(data.Name)) />
+                                  Click=@(() => OpenRenameDialog(data.Name)) /> 
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Class="mx-1"
-                                  Click=@(() => DeleteDatabase(data.Name)) />
+                                  Click=@(() => DeleteDatabase(data.Name)) /> 
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -42,26 +41,26 @@ else
 }
 
 @code {
-    private List<Database>? databases;
+    private List<Database>? databases; // Danh sách cơ sở dữ liệu
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() // Phương thức khởi tạo
     {
-        await LoadDatabases();
+        await LoadDatabases(); // Tải danh sách cơ sở dữ liệu
     }
 
-    private async Task LoadDatabases()
+    private async Task LoadDatabases() // Phương thức tải danh sách cơ sở dữ liệu
     {
         try
         {
-            databases = await SqlServerService.GetDatabasesAsync();
+            databases = await SqlServerService.GetDatabasesAsync(); // Gọi dịch vụ để lấy danh sách cơ sở dữ liệu
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); // Thông báo lỗi nếu có
         }
     }
 
-    private async Task OpenCreateDialog()
+    private async Task OpenCreateDialog() // Phương thức mở dialog tạo cơ sở dữ liệu
     {
         var result = await DialogService.OpenAsync<CreateDatabaseDialog>("Create Database",
             new Dictionary<string, object>(),
@@ -73,19 +72,19 @@ else
                     CloseDialogOnOverlayClick = false
                 });
 
-        if (result == true)
+        if (result == true) // Nếu tạo thành công
         {
-            await LoadDatabases();
+            await LoadDatabases(); // Tải lại danh sách cơ sở dữ liệu
         }
     }
 
-    private async Task OpenRenameDialog(string databaseName)
+    private async Task OpenRenameDialog(string databaseName) // Phương thức mở dialog đổi tên
     {
         var parameters = new Dictionary<string, object>
         {
-            { "CurrentName", databaseName },
+            { "CurrentName", databaseName }, // Truyền tên hiện tại
             { "OnClose", EventCallback.Factory.Create(this, async () => {
-                await LoadDatabases();
+                await LoadDatabases(); // Tải lại danh sách khi dialog đóng
                 DialogService.Close();
             })}
         };
@@ -98,36 +97,36 @@ else
                 });
     }
 
-    private async Task DeleteDatabase(string databaseName)
+    private async Task DeleteDatabase(string databaseName) // Phương thức xóa cơ sở dữ liệu
     {
         var confirm = await DialogService.Confirm(
             $"Are you sure you want to delete database '{databaseName}'?",
             "Delete Database",
             new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
 
-        if (confirm == true)
+        if (confirm == true) // Nếu xác nhận xóa
         {
             try
             {
-                await SqlServerService.DeleteDatabaseAsync(databaseName);
-                NotificationService.Notify(NotificationSeverity.Success, "Success", "Database deleted successfully");
-                await LoadDatabases();
+                await SqlServerService.DeleteDatabaseAsync(databaseName); // Gọi dịch vụ xóa cơ sở dữ liệu
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Database deleted successfully"); // Thông báo thành công
+                await LoadDatabases(); // Tải lại danh sách cơ sở dữ liệu
             }
             catch (Exception ex)
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); // Thông báo lỗi nếu có
             }
         }
     }
 
-    private async Task OpenDatabaseDetails(string databaseName)
+    private async Task OpenDatabaseDetails(string databaseName) // Phương thức mở dialog xem chi tiết cơ sở dữ liệu
     {
         try
         {
             var parameters = new Dictionary<string, object>
-        {
-            { "DatabaseName", databaseName }
-        };
+            {
+                { "DatabaseName", databaseName } // Truyền tên cơ sở dữ liệu
+            };
 
             var result = await DialogService.OpenAsync<DatabaseDetailsDialog>("Database Details",
                 parameters,
@@ -136,15 +135,12 @@ else
                         Width = "900px",
                         Height = "600px",
                         CloseDialogOnEsc = true,
-                        CloseDialogOnOverlayClick = true,
-                        ShowClose = true
+                        CloseDialogOnOverlayClick = true
                     });
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to open details: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); // Thông báo lỗi nếu có
         }
     }
-
-
 }

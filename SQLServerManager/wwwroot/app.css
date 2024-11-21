@@ -104,9 +104,6 @@ h1:focus {
         z-index: 1;
     }
 }
-.modal {
-    background-color: rgba(0,0,0,0.5);
-}
 
 .table-sm td, .table-sm th {
     padding: 0.3rem;
