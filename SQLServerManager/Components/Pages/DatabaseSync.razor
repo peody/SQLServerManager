@@ -1,0 +1,212 @@
+﻿@page "/dba"
+@using DatabaseSynchronizer.Services
+@inject DatabaseService DatabaseService
+@inject ModelGeneratorService ModelGeneratorService
+@inject IWebHostEnvironment WebHostEnvironment
+@inject IConfiguration Configuration
+@inject DbContextGenerationService DbContextGenerationService
+
+<PageTitle>Database Synchronizer</PageTitle>
+
+<div class="container">
+    <h3>Database Synchronization</h3>
+
+    <div class="row">
+        <div class="col-md-6">
+            <label>Chọn Database:</label>
+            <select class="form-control"
+                    @bind="SelectedDatabase">
+                @foreach (var db in Databases)
+                {
+                    <option value="@db">@db</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <label>Đường dẫn dự án:</label>
+            <div class="input-group">
+                <input type="text"
+                       class="form-control"
+                       @bind="ProjectPath"
+                       placeholder="Nhập đường dẫn dự án" />
+                <button class="btn btn-secondary" @onclick="BrowseProjectPath">
+                    Chọn thư mục
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <label>Namespace Models:</label>
+            <input type="text"
+                   class="form-control"
+                   @bind="ModelNamespace"
+                   placeholder="Nhập namespace cho models" />
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input type="checkbox"
+                       class="form-check-input"
+                       id="safeModeCheckbox"
+                       @bind="SafeMode" />
+                <label class="form-check-label" for="safeModeCheckbox">
+                    Chế độ an toàn (không xóa models)
+                </label>
+            </div>
+        </div>
+    </div>
+
+    
+
+    @if (!string.IsNullOrEmpty(StatusMessage))
+    {
+        <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-3">
+            @StatusMessage
+        </div>
+    }
+</div>
+<div class="row mt-3">
+    <div class="col-md-6">
+        <div class="form-check">
+            <input type="checkbox"
+                   class="form-check-input"
+                   id="generateDbContextCheckbox"
+                   @bind="GenerateDbContext" />
+            <label class="form-check-label" for="generateDbContextCheckbox">
+                Sinh DbContext
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <button class="btn btn-primary"
+            @onclick="GenerateModelsAndContext"
+            disabled="@IsProcessing">
+        @(IsProcessing ? "Đang xử lý..." : "Đồng bộ")
+    </button>
+</div>
+
+@code {
+    private List<string> Databases { get; set; } = new List<string>();
+    private string SelectedDatabase { get; set; }
+    private string ProjectPath { get; set; }
+    private string ModelNamespace { get; set; } = "YourProject.Models";
+    private bool SafeMode { get; set; } = false; // Thêm thuộc tính SafeMode
+    private string StatusMessage { get; set; }
+    private bool IsSuccess { get; set; }
+    private bool IsProcessing { get; set; } = false;
+    private bool GenerateDbContext { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            Databases = DatabaseService.GetDatabases();
+            if (Databases.Any())
+            {
+                SelectedDatabase = Databases.First();
+            }
+
+            // Đề xuất đường dẫn dự án mặc định
+            ProjectPath = GetDefaultProjectPath();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi: {ex.Message}";
+            IsSuccess = false;
+        }
+    }
+
+    private string GetDefaultProjectPath()
+    {
+        // Tìm đường dẫn dự án .NET gần nhất
+        string currentDir = Directory.GetCurrentDirectory();
+        string[] possibleProjectFiles = Directory.GetFiles(currentDir, "*.csproj", SearchOption.AllDirectories);
+
+        return possibleProjectFiles.Length > 0
+            ? Path.GetDirectoryName(possibleProjectFiles[0])
+            : currentDir;
+    }
+
+    private void BrowseProjectPath()
+    {
+        // TODO: Implement file dialog for path selection
+        // Placeholder for future implementation
+    }
+
+    private async Task GenerateModelsAndContext()
+    {
+        if (string.IsNullOrEmpty(SelectedDatabase))
+        {
+            StatusMessage = "Vui lòng chọn database";
+            IsSuccess = false;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(ProjectPath))
+        {
+            StatusMessage = "Vui lòng chọn đường dẫn dự án";
+            IsSuccess = false;
+            return;
+        }
+
+        IsProcessing = true;
+        StatusMessage = "";
+
+        try
+        {
+            // Sinh Models
+            bool modelResult = await ModelGeneratorService.GenerateModelsAsync(
+                SelectedDatabase,
+                ProjectPath,
+                ModelNamespace,
+                SafeMode);
+
+            if (!modelResult)
+            {
+                StatusMessage = "Sinh model thất bại";
+                IsSuccess = false;
+                return;
+            }
+
+            // Sinh DbContext (nếu được chọn)
+            bool contextResult = true;
+            if (GenerateDbContext)
+            {
+                contextResult = await DbContextGenerationService.GenerateDbContextAsync(
+                    SelectedDatabase,
+                    ProjectPath,
+                    ModelNamespace.Replace(".Models", ""), // Điều chỉnh namespace
+                    SafeMode);
+            }
+
+            // Xác định trạng thái kết quả
+            StatusMessage = GenerateDbContext
+                ? (contextResult
+                    ? "Sinh model và DbContext thành công"
+                    : "Sinh model thành công, nhưng DbContext thất bại")
+                : "Sinh model thành công";
+
+            IsSuccess = GenerateDbContext ? contextResult : true;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi: {ex.Message}";
+            IsSuccess = false;
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+}

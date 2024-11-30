@@ -8,5 +8,6 @@
         public DateTime CreateDate { get; set; }
         public long SizeKB { get; set; }
         public List<ColumnInfo> Columns { get; set; } = new();
+
     }
 }
