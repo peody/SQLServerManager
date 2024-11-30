@@ -5,6 +5,8 @@
 @inject IWebHostEnvironment WebHostEnvironment
 @inject IConfiguration Configuration
 @inject DbContextGenerationService DbContextGenerationService
+@using System.Runtime.InteropServices
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Database Synchronizer</PageTitle>
 
@@ -28,16 +30,16 @@
         <div class="col-md-6">
             <label>Đường dẫn dự án:</label>
             <div class="input-group">
-                <input type="text"
-                       class="form-control"
-                       @bind="ProjectPath"
-                       placeholder="Nhập đường dẫn dự án" />
+                <div class="form-control text-muted" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    @(string.IsNullOrEmpty(ProjectPath) ? "Chưa chọn thư mục" : ProjectPath)
+                </div>
                 <button class="btn btn-secondary" @onclick="BrowseProjectPath">
                     Chọn thư mục
                 </button>
             </div>
         </div>
     </div>
+
 
     <div class="row mt-3">
         <div class="col-md-6">
@@ -115,8 +117,7 @@
                 SelectedDatabase = Databases.First();
             }
 
-            // Đề xuất đường dẫn dự án mặc định
-            ProjectPath = GetDefaultProjectPath();
+           
         }
         catch (Exception ex)
         {
@@ -124,22 +125,24 @@
             IsSuccess = false;
         }
     }
-
-    private string GetDefaultProjectPath()
+    private async Task BrowseProjectPath()
     {
-        // Tìm đường dẫn dự án .NET gần nhất
-        string currentDir = Directory.GetCurrentDirectory();
-        string[] possibleProjectFiles = Directory.GetFiles(currentDir, "*.csproj", SearchOption.AllDirectories);
+        var selectedPath = await JSRuntime.InvokeAsync<string>(
+            "prompt",
+            "Nhập đường dẫn thư mục dự án:"
+        );
 
-        return possibleProjectFiles.Length > 0
-            ? Path.GetDirectoryName(possibleProjectFiles[0])
-            : currentDir;
-    }
-
-    private void BrowseProjectPath()
-    {
-        // TODO: Implement file dialog for path selection
-        // Placeholder for future implementation
+        if (!string.IsNullOrEmpty(selectedPath) &&
+            Directory.Exists(selectedPath))
+        {
+            ProjectPath = selectedPath;
+            StateHasChanged();
+        }
+        else
+        {
+            StatusMessage = "Đường dẫn không hợp lệ";
+            IsSuccess = false;
+        }
     }
 
     private async Task GenerateModelsAndContext()
