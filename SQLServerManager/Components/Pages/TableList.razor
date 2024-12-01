@@ -4,7 +4,6 @@
 @inject IDatabaseService DatabaseService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-
 <div class="container-fluid">
     <h3>Database Tables</h3>
     <!-- Database Selection -->
@@ -35,11 +34,19 @@
     </div>
     @if (loading)
     {
-        <div class="loading-spinner">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
+        /* From Uiverse.io by SouravBandyopadhyay */
+        
+ <div class="hourglassBackground">
+      <div class="hourglassContainer">
+        <div class="hourglassCurves"></div>
+        <div class="hourglassCapTop"></div>
+        <div class="hourglassGlassTop"></div>
+        <div class="hourglassSand"></div>
+        <div class="hourglassSandStream"></div>
+        <div class="hourglassCapBottom"></div>
+        <div class="hourglassGlass"></div>
+      </div>
+    </div>
     }
     else if (tables != null && selectedDatabase != null)
     {
@@ -84,7 +91,7 @@
             </table>
         </div>
         <!-- Data of table-->
-        @if (tableData != null && DataModal)
+        @if (tableData != null && DataModal && showTableData)
         {
             <!-- Table Data View -->
             <div class="card mt-3">
@@ -123,7 +130,8 @@
                                         <!-- them phan nay-->
                                         <td>
                                             <div class="btn-group">
-                                                <button class="btn btn-primary btn-sm" @onclick="() => InitializeEditRecord(row)">Edit
+                                                <button class="btn btn-primary btn-sm" @onclick="() => InitializeEditRecord(row)">
+                                                    Edit
 
                                                     <i class="fas fa-edit"></i>
                                                 </button>
@@ -164,25 +172,27 @@
     <!-- Create Table Modal -->
     @if (showCreateModal)
     {
-        <div class="modal" style="display: block" tabindex="-1">
+        <div class="modal fade show" style="display: block" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Create New Table</h5>
-                        <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                        <button type="button" class="btn-close" @onclick="CloseModals" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Schema:</label>
-                                    <input type="text" class="form-control" @bind="newTable.Schema" placeholder="Default: dbo"/>
+                                    <input type="text" class="form-control" @bind="newTable.Schema" placeholder="Default: dbo" />
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Table Name:</label>
-                                    <input type="text" class="form-control" @bind="newTable.Name" required/>
+                                    <input type="text" class="form-control" @bind="newTable.Name" required />
                                 </div>
                             </div>
                         </div>
@@ -197,12 +207,7 @@
                                             <th>Data Type</th>
                                             <th>Length</th>
                                             <th>Primary Key</th>
-                                            <th>Nullable</th>
-                                            <th>Identity</th>
-                                            <th>Foreign Key</th>
-                                            <th>FK Reference</th>
-                                            <th>Default</th>
-                                            <th></th>
+
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -242,6 +247,28 @@
                                                     <input type="checkbox" class="form-check-input"
                                                            @bind="column.IsPrimaryKey" />
                                                 </td>
+
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+
+                                            <th>Nullable</th>
+                                            <th>Identity</th>
+                                            <th>Foreign Key</th>
+                                            <th>FK Reference</th>
+                                            <th>Default</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var column in newTable.Columns)
+                                        {
+                                            <tr>
+
                                                 <td>
                                                     <input type="checkbox" class="form-check-input"
                                                            @bind="column.IsNullable" />
@@ -298,9 +325,10 @@
                                 </table>
 
                             </div>
-                            <button class="btn btn-secondary btn-sm" @onclick="AddColumn">
+                            <button class="btn btn-secondary btn-sm add-column-btn" @onclick="AddColumn">
                                 <i class="fas fa-plus"></i> Add Column
                             </button>
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -310,8 +338,8 @@
                 </div>
             </div>
         </div>
-        <div class="modal-backdrop"></div>
-        
+        <div class="modal-backdrop fade show"></div>
+
     }
     <!-- Columns Modal -->
     @if (showColumnsModal)
@@ -320,8 +348,10 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Columns - @selectedTable?.Schema.@selectedTable?.Name</h5>
-                        <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                        <h5 class="modal-title">Create New Table</h5>
+                        <button type="button" class="btn-close" @onclick="CloseModals" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     <div class="modal-body">
                         <!-- Add Column Button -->
@@ -468,391 +498,320 @@
 </div>
 
 @code {
-    // Danh sách cơ sở dữ liệu hiện có
     private List<string> databases;
-
-    // Danh sách các bảng trong cơ sở dữ liệu đã chọn
     private List<TableInfo> tables;
-
-    // Tên cơ sở dữ liệu hiện tại được chọn
     private string selectedDatabase;
-
-    // Thông tin bảng hiện tại được chọn
     private TableInfo selectedTable;
-
-    // Danh sách các cột trong bảng đã chọn
     private List<ColumnInfo> tableColumns;
-
-    // Kết quả truy vấn dữ liệu bảng
     private QueryResult tableData;
-
-    // Trạng thái đang tải dữ liệu
-    private bool loading;
-
-    // Trạng thái hiển thị modal tạo bảng
+    private bool loading = true;
     private bool showCreateModal;
-
-    // Trạng thái hiển thị modal cột
     private bool showColumnsModal;
-
-    // Thông tin bảng mới đang được tạo
     private TableInfo newTable = new() { Schema = "dbo", Columns = new List<ColumnInfo>() };
-
-    // Trang hiện tại trong phân trang
     private int currentPage = 1;
-
-    // Số lượng bản ghi hiển thị trên mỗi trang
     private int pageSize = 50;
-
-    // Cột hiện tại để sắp xếp dữ liệu
     private string currentOrderBy;
-
-    // Trạng thái hiển thị modal dữ liệu
     private bool DataModal = false;
+    private bool showTableData = true;
 
-    // Danh sách các kiểu dữ liệu có thể cho cột
+
     private readonly List<string> dataTypes = new()
-{
-    "int",
-    "bigint",
-    "smallint",
-    "tinyint",
-    "varchar",
-    "nvarchar",
-    "char",
-    "nchar",
-    "datetime",
-    "datetime2",
-    "date",
-    "time",
-    "bit",
-    "decimal",
-    "float",
-    "money",
-    "text",
-    "ntext",
-    "binary",
-    "varbinary",
-    "uniqueidentifier"
-};
-
-    // Trạng thái chỉnh sửa cột
+    {
+        "int",
+        "bigint",
+        "smallint",
+        "tinyint",
+        "varchar",
+        "nvarchar",
+        "char",
+        "nchar",
+        "datetime",
+        "datetime2",
+        "date",
+        "time",
+        "bit",
+        "decimal",
+        "float",
+        "money",
+        "text",
+        "ntext",
+        "binary",
+        "varbinary",
+        "uniqueidentifier"
+    };
     private bool isEditingColumn = false;
-
-    // Trạng thái thêm cột
     private bool isAddingColumn = false;
-
-    // Cột đang được chỉnh sửa
     private ColumnInfo editingColumn = new();
-
-    // Tên cột gốc để lưu khi chỉnh sửa
-    private string originalColumnName;
-
-    // Danh sách các kiểu dữ liệu yêu cầu độ dài
+    private string originalColumnName; // Để lưu tên cột gốc khi edit
     private readonly List<string> lengthRequiredTypes = new()
-{
-    "varchar", "nvarchar", "char", "nchar", "binary", "varbinary"
-};
-
-    // Phương thức xử lý khi kiểu dữ liệu của cột thay đổi
+    {
+        "varchar", "nvarchar", "char", "nchar", "binary", "varbinary"
+    };
     private void OnDataTypeChanged(ColumnInfo column, string newDataType)
     {
-        column.DataType = newDataType; // Cập nhật kiểu dữ liệu
-                                       // Nếu kiểu dữ liệu không yêu cầu độ dài, đặt độ dài tối đa về 0
+        column.DataType = newDataType;
         if (!lengthRequiredTypes.Contains(newDataType.ToLower()))
         {
             column.MaxLength = 0;
         }
     }
-
-    // Phương thức khởi tạo khi component được khởi tạo
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            loading = true; // Bắt đầu quá trình tải
-            databases = await DatabaseService.GetDatabasesAsync(); // Tải danh sách cơ sở dữ liệu
+
+            cts = new CancellationTokenSource();
+            await LoadData(cts.Token);
+            databases = await DatabaseService.GetDatabasesAsync();
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading databases: {ex.Message}");
         }
         finally
         {
-            loading = false; // Kết thúc quá trình tải
+            loading = false;
         }
     }
-
-    // Phương thức tải danh sách bảng từ cơ sở dữ liệu đã chọn
     private async Task LoadTables()
     {
-        if (string.IsNullOrEmpty(selectedDatabase)) // Nếu chưa chọn cơ sở dữ liệu
+        if (string.IsNullOrEmpty(selectedDatabase))
             return;
 
         try
         {
-            loading = true; // Bắt đầu quá trình tải
-            tables = await TableService.GetTablesAsync(selectedDatabase); // Tải danh sách bảng
+            loading = true;
+            tables = await TableService.GetTablesAsync(selectedDatabase);
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading tables: {ex.Message}");
         }
         finally
         {
-            loading = false; // Kết thúc quá trình tải
+            loading = false;
         }
     }
-
-    // Phương thức hiển thị dữ liệu của bảng đã chọn
     private async Task ViewTableData(TableInfo table)
+
     {
         try
         {
-            selectedTable = table; // Lưu bảng đã chọn
-            currentPage = 1; // Đặt trang hiện tại về 1
-            currentOrderBy = null; // Đặt thứ tự sắp xếp về null
-            DataModal = true; // Hiển thị modal dữ liệu
-            await LoadTableData(); // Tải dữ liệu bảng
+            selectedTable = table;
+            currentPage = 1;
+            currentOrderBy = null;
+            DataModal = true;
+            showTableData = true;
+            await LoadTableData();
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading table data: {ex.Message}");
         }
     }
-
-    // Phương thức tải dữ liệu cho trang hiện tại
     private async Task LoadPage(int page)
     {
-        currentPage = page; // Đặt trang hiện tại
-        await LoadTableData(); // Tải dữ liệu bảng
+        currentPage = page;
+        await LoadTableData();
     }
-
-    // Phương thức tải dữ liệu của bảng đã chọn
     private async Task LoadTableData()
     {
         try
         {
-            loading = true; // Bắt đầu quá trình tải
+            loading = true;
             tableData = await TableService.QueryTableDataAsync(
                 selectedDatabase,
                 selectedTable.Schema,
                 selectedTable.Name,
                 currentPage,
                 pageSize,
-                currentOrderBy // Truyền thông tin sắp xếp
+                currentOrderBy
             );
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading table data: {ex.Message}");
         }
         finally
         {
-            loading = false; // Kết thúc quá trình tải
+            loading = false;
         }
     }
-
-    // Phương thức hiển thị modal cột cho bảng đã chọn
     private async Task ShowColumnsModal(TableInfo table)
     {
         try
         {
-            loading = true; // Bắt đầu quá trình tải
-            selectedTable = table; // Lưu bảng đã chọn
+            loading = true;
+            selectedTable = table;
             if (table != null)
             {
-                // Tải danh sách cột cho bảng đã chọn
                 tableColumns = await TableService.GetColumnsAsync(
                     selectedDatabase,
                     table.Schema,
                     table.Name
                 );
             }
-            showColumnsModal = true; // Hiển thị modal cột
+            showColumnsModal = true;
+            showTableData = false;
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading columns: {ex.Message}");
         }
         finally
         {
-            loading = false; // Kết thúc quá trình tải
-            StateHasChanged(); // Cập nhật trạng thái UI
+            loading = false;
+            StateHasChanged();
         }
     }
-
-    // Phương thức hiển thị modal tạo bảng
     private void ShowCreateTableModal()
     {
         newTable = new TableInfo
             {
-                Schema = "dbo", // Đặt schema mặc định
+                Schema = "dbo",
                 Columns = new List<ColumnInfo>
-        {
-            new ColumnInfo() // Thêm cột đầu tiên mặc định
-        }
+            {
+                new ColumnInfo() // Add default first column
+            }
             };
-        showCreateModal = true; // Hiển thị modal tạo bảng
+        showCreateModal = true;
+        showTableData = false;
     }
-
-    // Phương thức thêm cột mới vào bảng
     private void AddColumn()
     {
-        newTable.Columns.Add(new ColumnInfo()); // Thêm cột mới
+        newTable.Columns.Add(new ColumnInfo());
     }
-
-    // Phương thức xóa cột khỏi bảng
     private void RemoveColumn(ColumnInfo column)
     {
-        newTable.Columns.Remove(column); // Xóa cột
+        newTable.Columns.Remove(column);
     }
-
-    // Phương thức xác thực và tạo bảng mới
     private async Task ValidateAndCreateTable()
     {
-        var errors = new List<string>(); // Danh sách lỗi
+        var errors = new List<string>();
 
-        // Xác thực tên bảng
+        // Validate table name
         if (string.IsNullOrWhiteSpace(newTable.Name))
         {
-            errors.Add("Table name is required"); // Tên bảng là bắt buộc
+            errors.Add("Table name is required");
         }
         else if (!System.Text.RegularExpressions.Regex.IsMatch(newTable.Name, "^[a-zA-Z][a-zA-Z0-9_]*$"))
         {
-            errors.Add("Invalid table name format"); // Tên bảng không hợp lệ
+            errors.Add("Invalid table name format");
         }
 
-        // Xác thực cột
+        // Validate columns
         if (!newTable.Columns.Any())
         {
-            errors.Add("At least one column is required"); // Ít nhất một cột là bắt buộc
+            errors.Add("At least one column is required");
         }
 
         foreach (var column in newTable.Columns)
         {
-            // Xác thực tên cột
             if (string.IsNullOrWhiteSpace(column.Name))
             {
-                errors.Add("Column name is required"); // Tên cột là bắt buộc
+                errors.Add("Column name is required");
             }
             if (string.IsNullOrWhiteSpace(column.DataType))
             {
-                errors.Add($"Data type is required for column {column.Name}"); // Kiểu dữ liệu là bắt buộc
+                errors.Add($"Data type is required for column {column.Name}");
             }
 
             // Chỉ kiểm tra MaxLength cho các kiểu dữ liệu yêu cầu độ dài
             if (lengthRequiredTypes.Contains(column.DataType?.ToLower()) && column.MaxLength <= 0)
             {
-                errors.Add($"Length is required for {column.DataType} column {column.Name}"); // Độ dài là bắt buộc
+                errors.Add($"Length is required for {column.DataType} column {column.Name}");
             }
 
-            // Xác thực khóa ngoại
+            // Validate foreign key
             if (column.IsForeignKey)
             {
                 if (string.IsNullOrEmpty(column.ForeignKeyTable))
                 {
-                    errors.Add($"Foreign key table must be selected for column {column.Name}"); // Bảng khóa ngoại là bắt buộc
+                    errors.Add($"Foreign key table must be selected for column {column.Name}");
                 }
                 if (string.IsNullOrEmpty(column.ForeignKeyColumn))
                 {
-                    errors.Add($"Foreign key column must be selected for column {column.Name}"); // Cột khóa ngoại là bắt buộc
+                    errors.Add($"Foreign key column must be selected for column {column.Name}");
                 }
             }
 
-            // Khóa chính không thể nullable
+            // Primary key cannot be nullable
             if (column.IsPrimaryKey && column.IsNullable)
             {
-                errors.Add($"Primary key column {column.Name} cannot be nullable"); // Khóa chính không thể nullable
+                errors.Add($"Primary key column {column.Name} cannot be nullable");
             }
         }
 
-        // Nếu có lỗi, hiển thị thông báo
         if (errors.Any())
         {
             await JSRuntime.InvokeVoidAsync("alert", string.Join("\n", errors));
             return;
         }
 
-        await CreateTable(); // Tạo bảng nếu không có lỗi
+        await CreateTable();
+        showTableData = false;
     }
-
-    // Phương thức lấy các cột khóa ngoại từ bảng
     private List<ColumnInfo> GetForeignKeyColumns(string tableFullName)
     {
-        if (string.IsNullOrEmpty(tableFullName)) return new List<ColumnInfo>(); // Nếu không có tên bảng, trả về danh sách rỗng
+        if (string.IsNullOrEmpty(tableFullName)) return new List<ColumnInfo>();
 
-        var parts = tableFullName.Split('.'); // Tách schema và tên bảng
-        if (parts.Length != 2) return new List<ColumnInfo>(); // Nếu không đúng định dạng, trả về danh sách rỗng
+        var parts = tableFullName.Split('.');
+        if (parts.Length != 2) return new List<ColumnInfo>();
 
-        var schema = parts[0]; // Lưu schema
-        var tableName = parts[1]; // Lưu tên bảng
+        var schema = parts[0];
+        var tableName = parts[1];
 
         try
         {
-            return TableService.GetColumnsAsync(selectedDatabase, schema, tableName).Result // Lấy danh sách cột
-                .Where(c => c.IsPrimaryKey) // Chỉ lấy các cột là khóa chính
+            return TableService.GetColumnsAsync(selectedDatabase, schema, tableName).Result
+                .Where(c => c.IsPrimaryKey)
                 .ToList();
         }
         catch
         {
-            return new List<ColumnInfo>(); // Nếu có lỗi, trả về danh sách rỗng
+            return new List<ColumnInfo>();
         }
     }
-
-    // Phương thức tạo bảng mới
     private async Task CreateTable()
     {
         try
         {
-            await TableService.CreateTableAsync(selectedDatabase, newTable); // Gọi dịch vụ để tạo bảng
-            await LoadTables(); // Tải lại danh sách bảng
-            CloseModals(); // Đóng các modal
-            await JSRuntime.InvokeVoidAsync("alert", "Table created successfully"); // Thông báo thành công
+            await TableService.CreateTableAsync(selectedDatabase, newTable);
+            await LoadTables();
+            CloseModals();
+            await JSRuntime.InvokeVoidAsync("alert", "Table created successfully");
         }
         catch (Exception ex)
         {
-            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error creating table: {ex.Message}");
         }
     }
-
-    // Phương thức xác nhận và xóa bảng
     private async Task ConfirmAndDeleteTable(TableInfo table)
     {
-        // Hiển thị hộp thoại xác nhận trước khi xóa bảng
         bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Are you sure you want to delete the table '{table.Schema}.{table.Name}'?\n" +
             $"This will permanently delete {table.RowCount} rows of data.");
 
-        if (confirmed) // Nếu người dùng xác nhận
+        if (confirmed)
         {
             try
             {
-                await TableService.DeleteTableAsync(selectedDatabase, table.Schema, table.Name); // Xóa bảng
-                await LoadTables(); // Tải lại danh sách bảng
-                await JSRuntime.InvokeVoidAsync("alert", "Table deleted successfully"); // Thông báo thành công
+                await TableService.DeleteTableAsync(selectedDatabase, table.Schema, table.Name);
+                await LoadTables();
+                await JSRuntime.InvokeVoidAsync("alert", "Table deleted successfully");
             }
-            catch (Exception ex) // Bắt lỗi nếu có
+            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting table: {ex.Message}"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting table: {ex.Message}");
             }
         }
     }
-
-    // Phương thức xóa cột
     private async Task DeleteColumn(string columnName)
     {
-        // Hiển thị hộp thoại xác nhận trước khi xóa cột
         bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Are you sure you want to delete the column '{columnName}'?");
 
-        if (confirmed) // Nếu người dùng xác nhận
+        if (confirmed)
         {
             try
             {
@@ -860,70 +819,58 @@
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    columnName // Xóa cột
+                    columnName
                 );
-                await ShowColumnsModal(selectedTable); // Tải lại danh sách cột
-                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully"); // Thông báo thành công
+                await ShowColumnsModal(selectedTable); // Refresh columns
+                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully");
             }
-            catch (Exception ex) // Bắt lỗi nếu có
+            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}");
             }
         }
     }
-
-    // Phương thức sắp xếp dữ liệu theo cột
     private async Task SortBy(string columnName)
     {
-        // Đảo ngược thứ tự sắp xếp nếu cột đã được sắp xếp
         if (currentOrderBy == columnName)
         {
-            currentOrderBy = $"{columnName} DESC"; // Sắp xếp giảm dần
+            currentOrderBy = $"{columnName} DESC";
         }
         else
         {
-            currentOrderBy = columnName; // Sắp xếp tăng dần
+            currentOrderBy = columnName;
         }
-        await LoadTableData(); // Tải lại dữ liệu bảng
+        await LoadTableData();
     }
-
-    // Phương thức đóng các modal
     private void CloseModals()
     {
-        showCreateModal = false; // Đóng modal tạo bảng
-        showColumnsModal = false; // Đóng modal cột
-        selectedTable = null; // Đặt bảng đã chọn về null
-    }
+        showCreateModal = false;
+        showColumnsModal = false;
+        selectedTable = null;
 
-    // Phương thức đóng modal dữ liệu
+    }
     private void CloseDataModals()
     {
-        DataModal = false; // Đóng modal dữ liệu
+        DataModal = false;
     }
-
-    // Phương thức xử lý thay đổi khóa ngoại
     private void OnForeignKeyChanged(ColumnInfo column)
     {
-        if (!column.IsForeignKey) // Nếu không phải khóa ngoại
+        if (!column.IsForeignKey)
         {
-            // Đặt lại các thuộc tính liên quan đến khóa ngoại
-            column.ForeignKeyTable = null; // Đặt bảng khóa ngoại về null
-            column.ForeignKeyColumn = null; // Đặt cột khóa ngoại về null
+            // Reset foreign key related properties when unchecking
+            column.ForeignKeyTable = null;
+            column.ForeignKeyColumn = null;
         }
     }
-
-    // Phương thức khởi tạo thêm cột
     private void InitializeAddColumn()
     {
-        editingColumn = new ColumnInfo(); // Khởi tạo cột mới
-        isAddingColumn = true; // Đặt trạng thái thêm cột
-        isEditingColumn = false; // Đặt trạng thái chỉnh sửa cột về false
+        editingColumn = new ColumnInfo();
+        isAddingColumn = true;
+        isEditingColumn = false;
     }
-
-    // Phương thức khởi tạo chỉnh sửa cột
     private void InitializeEditColumn(ColumnInfo column)
     {
-        editingColumn = new ColumnInfo // Khởi tạo cột đang chỉnh sửa
+        editingColumn = new ColumnInfo
             {
                 Name = column.Name,
                 DataType = column.DataType,
@@ -931,80 +878,72 @@
                 IsNullable = column.IsNullable,
                 DefaultValue = column.DefaultValue
             };
-        originalColumnName = column.Name; // Lưu tên cột gốc
-        isEditingColumn = true; // Đặt trạng thái chỉnh sửa cột
-        isAddingColumn = false; // Đặt trạng thái thêm cột về false
+        originalColumnName = column.Name;
+        isEditingColumn = true;
+        isAddingColumn = false;
     }
-
-    // Phương thức lưu thay đổi cột
     private async Task SaveColumnChanges()
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(editingColumn.Name)) // Kiểm tra tên cột
+            if (string.IsNullOrWhiteSpace(editingColumn.Name))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Column name is required"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", "Column name is required");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(editingColumn.DataType)) // Kiểm tra kiểu dữ liệu
+            if (string.IsNullOrWhiteSpace(editingColumn.DataType))
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Data type is required"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", "Data type is required");
                 return;
             }
 
-            // Kiểm tra độ dài nếu kiểu dữ liệu yêu cầu
             if (lengthRequiredTypes.Contains(editingColumn.DataType.ToLower()) && editingColumn.MaxLength <= 0)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Length is required for this data type"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", "Length is required for this data type");
                 return;
             }
 
-            if (isAddingColumn) // Nếu đang thêm cột
+            if (isAddingColumn)
             {
                 await TableService.AddColumnAsync(
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    editingColumn // Thêm cột
+                    editingColumn
                 );
             }
-            else // Nếu đang chỉnh sửa cột
+            else
             {
                 await TableService.AlterColumnAsync(
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
                     originalColumnName,
-                    editingColumn // Chỉnh sửa cột
+                    editingColumn
                 );
             }
 
-            // Tải lại danh sách cột
+            // Refresh columns
             await ShowColumnsModal(selectedTable);
-            CancelColumnEdit(); // Hủy chỉnh sửa cột
+            CancelColumnEdit();
             await JSRuntime.InvokeVoidAsync("alert",
-                isAddingColumn ? "Column added successfully" : "Column updated successfully"); // Thông báo thành công
+                isAddingColumn ? "Column added successfully" : "Column updated successfully");
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
         }
     }
-
-    // Phương thức hủy chỉnh sửa cột
     private void CancelColumnEdit()
     {
-        isAddingColumn = false; // Đặt trạng thái thêm cột về false
-        isEditingColumn = false; // Đặt trạng thái chỉnh sửa cột về false
-        editingColumn = new ColumnInfo(); // Khởi tạo cột mới
-        originalColumnName = null; // Đặt tên cột gốc về null
+        isAddingColumn = false;
+        isEditingColumn = false;
+        editingColumn = new ColumnInfo();
+        originalColumnName = null;
     }
-
-    // Phương thức xác nhận xóa cột
     private async Task ConfirmDeleteColumn(ColumnInfo column)
     {
-        // Hiển thị hộp thoại xác nhận trước khi xóa cột
         if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete column {column.Name}?"))
         {
             try
@@ -1013,156 +952,146 @@
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    column.Name // Xóa cột
+                    column.Name
                 );
-                await ShowColumnsModal(selectedTable); // Tải lại danh sách cột
-                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully"); // Thông báo thành công
+                await ShowColumnsModal(selectedTable);
+                await JSRuntime.InvokeVoidAsync("alert", "Column deleted successfully");
             }
-            catch (Exception ex) // Bắt lỗi nếu có
+            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}"); // Thông báo lỗi
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting column: {ex.Message}");
             }
         }
     }
+    // them phan nay
 
-    // Khai báo biến cho việc quản lý bản ghi
-    private Dictionary<string, object> editingRecord; // Bản ghi đang chỉnh sửa
-    private Dictionary<string, object> originalRecord; // Bản ghi gốc để so sánh
-    private bool showRecordModal = false; // Trạng thái hiển thị modal bản ghi
-    private bool isEditingRecord = false; // Trạng thái chỉnh sửa bản ghi
+    private Dictionary<string, object> editingRecord;
+    private Dictionary<string, object> originalRecord;
+    private bool showRecordModal = false;
+    private bool isEditingRecord = false;
 
-    // Phương thức khởi tạo thêm bản ghi
     private async Task InitializeAddRecord()
     {
         try
         {
-            // Tải danh sách cột trước khi hiển thị modal
+            // Load columns trước khi hiển thị modal
             tableColumns = await TableService.GetColumnsAsync(
                 selectedDatabase,
                 selectedTable.Schema,
                 selectedTable.Name
             );
 
-            // Khởi tạo dictionary trống cho bản ghi mới
+            // Khởi tạo dictionary trống cho record mới
             editingRecord = new Dictionary<string, object>();
-            foreach (var column in tableColumns) // Duyệt qua từng cột
+            foreach (var column in tableColumns)
             {
-                editingRecord[column.Name] = null; // Đặt giá trị ban đầu là null
+                editingRecord[column.Name] = null;
             }
 
-            isEditingRecord = false; // Đặt trạng thái chỉnh sửa bản ghi về false
-            showRecordModal = true; // Hiển thị modal bản ghi
-            StateHasChanged(); // Cập nhật trạng thái UI
+            isEditingRecord = false;
+            showRecordModal = true;
+            StateHasChanged();
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing add form: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing add form: {ex.Message}");
         }
     }
 
-    // Phương thức khởi tạo chỉnh sửa bản ghi
     private async Task InitializeEditRecord(Dictionary<string, object> record)
     {
         try
         {
-            // Tải danh sách cột trước khi hiển thị modal
+            // Load columns trước khi hiển thị modal
             tableColumns = await TableService.GetColumnsAsync(
                 selectedDatabase,
                 selectedTable.Schema,
                 selectedTable.Name
             );
 
-            // Khởi tạo bản ghi đang chỉnh sửa và lưu bản ghi gốc
             editingRecord = new Dictionary<string, object>(record);
             originalRecord = new Dictionary<string, object>(record);
-            isEditingRecord = true; // Đặt trạng thái chỉnh sửa bản ghi
-            showRecordModal = true; // Hiển thị modal bản ghi
-            StateHasChanged(); // Cập nhật trạng thái UI
+            isEditingRecord = true;
+            showRecordModal = true;
+            StateHasChanged();
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing edit form: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing edit form: {ex.Message}");
         }
     }
 
-    // Phương thức lưu bản ghi (cập nhật hoặc thêm mới)
     private async Task SaveRecord()
     {
         try
         {
-            if (isEditingRecord) // Nếu đang chỉnh sửa bản ghi
+            if (isEditingRecord)
             {
                 await TableService.UpdateRecordAsync(
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    editingRecord, // Bản ghi đang chỉnh sửa
-                    originalRecord // Bản ghi gốc để so sánh
+                    editingRecord,
+                    originalRecord
                 );
             }
-            else // Nếu đang thêm mới bản ghi
+            else
             {
                 await TableService.InsertRecordAsync(
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    editingRecord // Bản ghi mới
+                    editingRecord
                 );
             }
 
-            showRecordModal = false; // Đóng modal bản ghi
-            await LoadTableData(); // Tải lại dữ liệu sau khi lưu
+            showRecordModal = false;
+            await LoadTableData(); // Reload data after save
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error saving record: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error saving record: {ex.Message}");
         }
     }
 
-    // Phương thức xóa bản ghi
     private async Task DeleteRecord(Dictionary<string, object> record)
     {
         try
         {
-            // Hiển thị hộp thoại xác nhận trước khi xóa bản ghi
             if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this record?"))
             {
                 await TableService.DeleteRecordAsync(
                     selectedDatabase,
                     selectedTable.Schema,
                     selectedTable.Name,
-                    record // Bản ghi cần xóa
+                    record
                 );
-                await LoadTableData(); // Tải lại dữ liệu sau khi xóa
+                await LoadTableData(); // Reload data after delete
             }
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting record: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting record: {ex.Message}");
         }
     }
-
-    // Phương thức chuyển đổi hàng dữ liệu thành dictionary
     private Dictionary<string, object> ConvertRowToDictionary(List<object> row, List<string> columns)
     {
         var dictionary = new Dictionary<string, object>();
 
-        // Duyệt qua từng cột và thêm vào dictionary
         for (int i = 0; i < columns.Count; i++)
         {
             var value = row[i];
-            dictionary[columns[i]] = value == DBNull.Value ? null : value; // Kiểm tra giá trị DBNull
+            dictionary[columns[i]] = value == DBNull.Value ? null : value;
         }
 
-        return dictionary; // Trả về dictionary chứa dữ liệu
+        return dictionary;
     }
 
-    // Phương thức khởi tạo chỉnh sửa bản ghi từ hàng dữ liệu
     private async Task InitializeEditRecord(List<object> row)
     {
         try
         {
-            // Tải danh sách cột nếu chưa có
+            // Load columns nếu chưa có
             if (tableColumns == null)
             {
                 tableColumns = await TableService.GetColumnsAsync(
@@ -1175,18 +1104,34 @@
             // Lấy danh sách tên cột
             var columnNames = tableColumns.Select(c => c.Name).ToList();
 
-            // Chuyển đổi hàng dữ liệu thành dictionary
+            // Chuyển đổi row thành dictionary
             editingRecord = ConvertRowToDictionary(row, columnNames);
-            originalRecord = new Dictionary<string, object>(editingRecord); // Lưu bản ghi gốc
+            originalRecord = new Dictionary<string, object>(editingRecord);
 
-            isEditingRecord = true; // Đặt trạng thái chỉnh sửa bản ghi
-            showRecordModal = true; // Hiển thị modal bản ghi
-            StateHasChanged(); // Cập nhật trạng thái UI
+            isEditingRecord = true;
+            showRecordModal = true;
+            StateHasChanged();
         }
-        catch (Exception ex) // Bắt lỗi nếu có
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing edit form: {ex.Message}"); // Thông báo lỗi
+            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing edit form: {ex.Message}");
         }
+    }
+    private CancellationTokenSource cts;
+
+   
+
+    private async Task LoadData(CancellationToken cancellationToken)
+    {
+        // Simulate a long-running operation
+        await Task.Delay(5000, cancellationToken);
+
+        loading = false;
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
     }
 
 
