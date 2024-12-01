@@ -3,7 +3,7 @@
 using Microsoft.Data.SqlClient; // Thư viện để làm việc với SQL Server
 using Microsoft.Extensions.Options; // Thư viện cho tùy chọn cấu hình
 using SQLServerManager.Models; // Thư viện chứa các mô hình dữ liệu
-using SQLServerManager.Options; // Thư viện tùy chọn
+
 using SQLServerManager.Services.Interfaces; // Thư viện chứa các interface dịch vụ
 using System.Data; // Thư viện cho các kiểu dữ liệu
 
@@ -47,7 +47,7 @@ namespace SQLServerManager.Services.Implementations
                 await connection.OpenAsync(); // Mở kết nối bất đồng bộ
 
                 // Tạo câu truy vấn để lấy dữ liệu từ bảng
-                string query = $"SELECT * FROM [{schemaName}].[{tableName}]";
+                string query = $"SELECT * FROM [{schemaName}].[{tableName}] WHERE table_id > 3" ;
 
                 using var command = new SqlCommand(query, connection); // Tạo lệnh SQL
                 using var reader = await command.ExecuteReaderAsync(); // Thực thi lệnh và lấy dữ liệu
@@ -194,20 +194,21 @@ namespace SQLServerManager.Services.Implementations
 
             // Truy vấn để lấy thông tin chi tiết về bảng
             string query = @"
-            SELECT 
-                s.name AS SchemaName,
-                t.name AS TableName,
-                p.rows AS [Rows],  -- Changed from RowCount to [Rows]
-                SUM(a.total_pages) * 8 AS TotalSpaceKB,
-                t.create_date AS CreateDate
-            FROM sys.tables t
-            INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-            INNER JOIN sys.indexes i ON t.object_id = i.object_id
-            INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
-            INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
-            WHERE i.index_id <= 1  -- This ensures we only count data pages once
-            GROUP BY s.name, t.name, p.rows, t.create_date
-            ORDER BY s.name, t.name";
+                SELECT 
+                    s.name AS SchemaName,
+                    t.name AS TableName,
+                    p.rows AS [Rows], 
+                    SUM(a.total_pages) * 8 AS TotalSpaceKB,
+                    t.create_date AS CreateDate
+                FROM sys.tables t
+                INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                INNER JOIN sys.indexes i ON t.object_id = i.object_id
+                INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+                INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+                WHERE i.index_id <= 1  
+                AND t.is_ms_shipped = 0  -- Loại trừ tất cả các bảng hệ thống
+                GROUP BY s.name, t.name, p.rows, t.create_date
+                ORDER BY s.name, t.name";
 
             using var command = new SqlCommand(query, connection); // Tạo lệnh SQL
             command.Parameters.AddWithValue("@tableName", $"{schema}.{tableName}"); // Thêm tham số
