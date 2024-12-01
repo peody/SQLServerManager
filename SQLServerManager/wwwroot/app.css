@@ -1,4 +1,4 @@
-
+﻿
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -7,6 +7,7 @@ a, .btn-link {
     color: #006bb7;
 }
 
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;
@@ -14,7 +15,7 @@ a, .btn-link {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -50,6 +51,7 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
 .database-details {
     min-height: 400px;
 }
@@ -69,12 +71,12 @@ h1:focus {
 
 .rz-header {
     padding: 0.5rem 1rem;
-    background-color: #2a2a2a;
+    background-color: darkslategrey;
     color: white;
 }
 
 .rz-sidebar {
-    background-color: #f8f9fa;
+    background-color: darkslategrey;
     border-right: 1px solid #dee2e6;
 }
 
@@ -105,6 +107,10 @@ h1:focus {
     }
 }
 
+.modal {
+    background-color: rgba(0,0,0,0.5);
+}
+
 .table-sm td, .table-sm th {
     padding: 0.3rem;
 }
@@ -113,6 +119,7 @@ h1:focus {
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
 }
+
 .navbar-toggler {
     background-color: rgba(255, 255, 255, 0.1);
 }
@@ -185,3 +192,304 @@ h1:focus {
     }
 }
 
+/* Định dạng cho container-fluid */
+.container-fluid {
+    padding: 30px; /* Tăng khoảng cách bên trong */
+    background-color: #e9ecef; /* Màu nền sáng hơn */
+    border-radius: 10px; /* Bo góc cho container */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Bóng đậm hơn */
+    transition: box-shadow 0.3s; /* Hiệu ứng chuyển tiếp cho bóng */
+}
+
+    .container-fluid:hover {
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.25); /* Bóng đậm hơn khi hover */
+    }
+
+    /* Tùy chỉnh tiêu đề */
+    /* Căn giữa tiêu đề */
+    .container-fluid h3 {
+        color: #343a40; /* Màu chữ cho tiêu đề */
+        font-weight: bold; /* Đậm chữ */
+        font-size: 2rem; /* Kích thước chữ lớn hơn */
+        margin-bottom: 20px; /* Khoảng cách dưới tiêu đề */
+        text-align: center; /* Căn giữa tiêu đề */
+    }
+
+
+/* Tùy chỉnh nút */
+.btn {
+    font-size: 1.2rem; /* Kích thước chữ lớn hơn cho nút */
+    padding: 10px 20px; /* Tăng padding cho nút */
+}
+
+.btn-close {
+    position: absolute; /* Đặt nút ở vị trí tuyệt đối */
+    top: 10px; /* Khoảng cách từ trên cùng */
+    right: 10px; /* Khoảng cách từ bên phải */
+    border: none; /* Xóa viền */
+    background: transparent; /* Nền trong suốt */
+    font-size: 1.5rem; /* Kích thước chữ */
+    color: #000; /* Màu sắc chữ */
+    background-color: red;
+}
+/* Tùy chỉnh bảng */
+.table {
+    font-size: 1.1rem; /* Kích thước chữ lớn hơn cho bảng */
+}
+
+/* Định dạng cho tiêu đề Select Database */
+.form-label {
+    color: #007bff; /* Màu chữ đậm */
+    font-weight: bold; /* Đậm chữ */
+    font-size: 1.5rem; /* Kích thước chữ lớn hơn */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Thêm bóng cho chữ */
+    margin-bottom: 10px; /* Khoảng cách dưới tiêu đề */
+}
+/* Tùy chỉnh cho select với viền đen */
+.form-select {
+    font-size: 1.2rem; /* Kích thước chữ lớn hơn */
+    padding: 10px; /* Tăng padding cho select */
+    border: 2px solid #000; /* Đường viền màu đen */
+    border-radius: 5px; /* Bo góc cho select */
+    background-color: #f8f9fa; /* Màu nền sáng */
+    transition: border-color 0.3s; /* Hiệu ứng chuyển tiếp cho đường viền */
+}
+
+    /* Thay đổi màu đường viền khi hover */
+    .form-select:hover {
+        border-color: #555; /* Đổi màu đường viền khi hover */
+    }
+
+    /* Tùy chỉnh cho tùy chọn mặc định */
+    .form-select option {
+        color: #6c757d; /* Màu chữ cho option mặc định */
+        font-weight: normal; /* Chữ thường cho option */
+    }
+
+        /* Tùy chọn khi chọn */
+        .form-select option:checked {
+            color: #343a40; /* Màu chữ cho option được chọn */
+            font-weight: bold; /* Đậm chữ cho option được chọn */
+        }
+/* Tùy chỉnh cho nút "Create New Table" màu xám */
+.btn-gray {
+    background-color: #6c757d; /* Màu nền xám */
+    border-color: #6c757d; /* Màu viền xám */
+    font-size: 1.1rem; /* Kích thước chữ lớn hơn */
+    padding: 10px 20px; /* Padding cho nút */
+    border-radius: 5px; /* Bo góc cho nút */
+    transition: background-color 0.3s, transform 0.2s; /* Hiệu ứng chuyển tiếp */
+}
+
+    /* Hiệu ứng hover cho nút màu xám */
+    .btn-gray:hover {
+        background-color: #5a6268; /* Màu nền khi hover */
+        border-color: #545b62; /* Màu viền khi hover */
+        transform: scale(1.05); /* Tăng kích thước một chút khi hover */
+    }
+
+    /* Hiệu ứng khi nhấn nút */
+    .btn-gray:active {
+        transform: scale(0.95); /* Giảm kích thước khi nhấn */
+    }
+/* Khung cho bảng */
+.table {
+    border-collapse: collapse; /* Gộp các đường viền lại với nhau */
+    width: 100%; /* Chiếm toàn bộ chiều rộng */
+}
+
+    /* Đường viền cho các ô trong bảng */
+    .table th, .table td {
+        border: 1px solid #dee2e6; /* Đường viền nhẹ cho các ô */
+        padding: 8px; /* Padding cho các ô */
+        text-align: left; /* Canh trái cho văn bản */
+    }
+
+    /* Đường viền cho tiêu đề bảng */
+    .table thead th {
+        background-color: #f8f9fa; /* Màu nền cho tiêu đề */
+        font-weight: bold; /* Chữ in đậm */
+    }
+
+    /* Hiệu ứng hover cho hàng bảng */
+    .table tbody tr:hover {
+        background-color: #f1f1f1; /* Màu nền khi hover */
+    }
+
+/* Tùy chỉnh cho các nút trong bảng */
+.table-actions .btn {
+    margin-right: 5px; /* Khoảng cách giữa các nút */
+}
+
+    /* Nút hover */
+    .table-actions .btn:hover {
+        opacity: 0.8; /* Hiệu ứng mờ khi hover */
+    }
+
+.btn-primary {
+    background-color: #007bff; /* Màu nền chính */
+    border-color: #007bff; /* Màu viền chính */
+    color: #ffffff; /* Màu chữ trắng */
+}
+
+    /* Hiệu ứng hover cho nút màu chính */
+    .btn-primary:hover {
+        background-color: #0056b3; /* Màu nền khi hover */
+        border-color: #0056b3; /* Màu viền khi hover */
+    }
+
+/* Nút màu thông tin */
+.btn-info {
+    background-color: #17a2b8; /* Màu nền thông tin */
+    border-color: #17a2b8; /* Màu viền thông tin */
+    color: #ffffff; /* Màu chữ trắng */
+}
+
+    /* Hiệu ứng hover cho nút màu thông tin */
+    .btn-info:hover {
+        background-color: #138496; /* Màu nền khi hover */
+        border-color: #117a8b; /* Màu viền khi hover */
+    }
+
+/* Nút màu nguy hiểm */
+.btn-danger {
+    background-color: #dc3545; /* Màu nền nguy hiểm */
+    border-color: #dc3545; /* Màu viền nguy hiểm */
+    color: #ffffff; /* Màu chữ trắng */
+}
+
+    /* Hiệu ứng hover cho nút màu nguy hiểm */
+    .btn-danger:hover {
+        background-color: #c82333; /* Màu nền khi hover */
+        border-color: #bd2130; /* Màu viền khi hover */
+    }
+
+/* Tùy chỉnh cho tất cả các nút */
+.btn {
+    padding: 10px 15px; /* Padding cho nút */
+    border-radius: 5px; /* Bo góc cho nút */
+    transition: background-color 0.3s, border-color 0.3s; /* Hiệu ứng chuyển tiếp */
+}
+/* Tùy chỉnh cho nút "Create New Table" */
+.btn-success {
+    background-color: lightseagreen; /* Màu nền xanh lá cây */
+    border-color: lightseagreen; /* Màu viền xanh lá cây */
+    font-size: 1.1rem; /* Kích thước chữ lớn hơn */
+    padding: 10px 20px; /* Padding cho nút */
+    border-radius: 5px; /* Bo góc cho nút */
+    transition: background-color 0.3s, transform 0.2s; /* Hiệu ứng chuyển tiếp */
+}
+
+    /* Hiệu ứng hover cho nút */
+    .btn-success:hover {
+        background-color: cornflowerblue; /* Màu nền khi hover */
+        border-color: cornflowerblue; /* Màu viền khi hover */
+        transform: scale(1.05); /* Tăng kích thước một chút khi hover */
+    }
+
+    /* Hiệu ứng khi nhấn nút */
+    .btn-success:active {
+        transform: scale(0.95); /* Giảm kích thước khi nhấn */
+    }
+
+.modal {
+    display: block; /* Hiển thị modal */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Căn giữa modal */
+    width: 150%; /* Chiều rộng modal */
+    max-width: 800px; /* Chiều rộng tối đa */
+    background-color: white; /* Màu nền */
+    border-radius: 8px; /* Bo góc */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Đổ bóng */
+    z-index: 1050; /* Đảm bảo modal nằm trên các phần tử khác */
+    transition: opacity 0.15s linear; /* Hiệu ứng chuyển động */
+}
+
+.modal-header {
+    background-color: darkslateblue; /* Màu nền header */
+    color: white; /* Màu chữ */
+    padding: 15px; /* Padding cho header */
+    border-top-left-radius: 8px; /* Bo góc cho header */
+    border-top-right-radius: 8px; /* Bo góc cho header */
+    position: relative;
+    padding-right: 40px;
+}
+
+.modal-title {
+    font-size: 1.5rem; /* Kích thước chữ tiêu đề */
+}
+
+.modal-body {
+    padding: 20px; /* Padding cho body */
+}
+
+.modal-footer {
+    padding: 10px; /* Padding cho footer */
+    text-align: right; /* Căn phải cho footer */
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Nền tối */
+    z-index: 1040; /* Đảm bảo backdrop nằm dưới modal */
+}
+
+.modal-content {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-control {
+    border-color: #ced4da;
+    border-radius: 4px;
+}
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004a9b;
+    }
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+    }
+    
