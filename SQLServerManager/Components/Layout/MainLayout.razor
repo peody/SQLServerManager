@@ -6,21 +6,25 @@
 
 <RadzenLayout>
     <RadzenHeader>
-        <div class="d-flex align-items-center">
-            <RadzenSidebarToggle Click="@(() => _sidebarExpanded = !_sidebarExpanded)" />
-            <RadzenLabel Text="SQL Server Manager" Class="ms-3 h3 mb-0" />
+        <div class="d-flex align-items-center justify-content-between">
+           
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="collapse navbar-collapse">
+                    <RadzenPanelMenu Class="navbar-nav" Style="white-space: nowrap;">
+                        <div class="d-flex align-items-left">
+                            
+                            <RadzenLabel Text="SQL Server Manager" Class="ms-3 h3 mb-0" Style="position:relative; left:-800px; color:white;" />
+                        </div>
+                        <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+                        <RadzenPanelMenuItem Text="Databases" Icon="storage" Path="/databases" />
+                        <RadzenPanelMenuItem Text="Tables" Icon="storage" Path="/tables" />
+                        <RadzenPanelMenuItem Text="Sync" Icon="storage" Path="/dba" />
+                        <RadzenPanelMenuItem Text="About" Icon="info" Path="/about" />
+                    </RadzenPanelMenu>
+                </div>
+            </nav>
         </div>
     </RadzenHeader>
-
-    <RadzenSidebar @bind-Expanded="@_sidebarExpanded">
-        <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
-            <RadzenPanelMenuItem Text="Databases" Icon="storage" Path="/databases" />
-            <RadzenPanelMenuItem Text="Tables" Icon="storage" Path="/tables" />
-            <RadzenPanelMenuItem Text="Sync" Icon="storage" Path="/dba" />
-            <RadzenPanelMenuItem Text="About" Icon="info" Path="/about" />
-        </RadzenPanelMenu>
-    </RadzenSidebar>
 
     <RadzenBody>
         <div class="container-fluid px-4 py-3">
@@ -28,6 +32,14 @@
         </div>
     </RadzenBody>
 </RadzenLayout>
+
+<style>
+    .navbar-nav {
+        display: flex; /* Đảm bảo các phần tử nằm trên cùng một hàng */
+        justify-content: flex-end;
+        flex-wrap: nowrap; /* Ngăn không cho các phần tử xuống dòng */
+    }
+</style>
 
 @code {
     private bool _sidebarExpanded = true;
