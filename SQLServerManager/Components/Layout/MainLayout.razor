@@ -4,42 +4,48 @@
 <RadzenContextMenu />
 <RadzenTooltip />
 
-<RadzenLayout>
-    <RadzenHeader>
-        <div class="d-flex align-items-center justify-content-between">
-           
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="collapse navbar-collapse">
-                    <RadzenPanelMenu Class="navbar-nav" Style="white-space: nowrap;">
-                        <div class="d-flex align-items-left">
-                            
-                            <RadzenLabel Text="SQL Server Manager" Class="ms-3 h3 mb-0" Style="position:relative; left:-800px; color:white;" />
+    <div class="hero_area">
+        <!-- header section strats -->
+        <header class="header_section">
+            <div class="header_bottom">
+                <div class="container-fluid">
+                    <nav class="navbar navbar-expand-lg custom_nav-container ">
+                            <a class="navbar-brand" href="/">
+                                <i class="fas fa-database me-2"></i>SQL Server Manager
+                            </a>
+                            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                            <ul class="navbar-nav  ">
+                                <li class="nav-item active">
+                                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/databases">Databases</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/tables"> Tables</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/dba">Sync</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/about">About</a>
+                                </li>
+                            </ul>
                         </div>
-                        <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
-                        <RadzenPanelMenuItem Text="Databases" Icon="storage" Path="/databases" />
-                        <RadzenPanelMenuItem Text="Tables" Icon="storage" Path="/tables" />
-                        <RadzenPanelMenuItem Text="Sync" Icon="storage" Path="/dba" />
-                        <RadzenPanelMenuItem Text="About" Icon="info" Path="/about" />
-                    </RadzenPanelMenu>
+                    </nav>
                 </div>
-            </nav>
-        </div>
-    </RadzenHeader>
-
-    <RadzenBody>
-        <div class="container-fluid px-4 py-3">
-            @Body
-        </div>
-    </RadzenBody>
-</RadzenLayout>
-
-<style>
-    .navbar-nav {
-        display: flex; /* Đảm bảo các phần tử nằm trên cùng một hàng */
-        justify-content: flex-end;
-        flex-wrap: nowrap; /* Ngăn không cho các phần tử xuống dòng */
-    }
-</style>
+            </div>
+        </header>
+        <!-- end header section -->
+            <RadzenBody>
+                <div class="container-fluid px-4 py-3">
+                    @Body
+                </div>
+            </RadzenBody>
+    </div>
 
 @code {
     private bool _sidebarExpanded = true;
