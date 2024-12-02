@@ -7,8 +7,8 @@
 <div class="container-fluid">
     <h3>Database Tables</h3>
     <!-- Database Selection -->
-    <div class="row mb-3">
-        <div class="col-md-4">
+    <div >
+        <div >
             <div class="form-group">
                 <label for="databaseSelect" class="form-label">Select Database:</label>
                 <select id="databaseSelect" class="form-select" @bind="selectedDatabase" @bind:after="LoadTables">
@@ -23,7 +23,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-md-8">
+        <div >
             @if (!string.IsNullOrEmpty(selectedDatabase))
             {
                 <button class="btn btn-success" @onclick="ShowCreateTableModal">
@@ -1124,7 +1124,7 @@
     private async Task LoadData(CancellationToken cancellationToken)
     {
         // Simulate a long-running operation
-        await Task.Delay(5000, cancellationToken);
+        await Task.Delay(2000, cancellationToken);
 
         loading = false;
     }
