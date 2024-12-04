@@ -86,7 +86,7 @@ a:focus {
 /*header section*/
 .hero_area {
   position: relative;
-  min-height: 100%;
+  min-height: 100vh;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -97,7 +97,7 @@ a:focus {
 }
 
 .sub_page .hero_area {
-  min-height: 100%;
+  min-height: auto;
 }
 
 .sub_page .header_section {
