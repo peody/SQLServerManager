@@ -64,32 +64,6 @@ h1:focus {
     .database-details .rz-stack > div {
         margin-bottom: 0.5rem;
     }
-/* Layout styles */
-.rz-layout {
-    height: 100vh;
-    width : 100%;
-}
-
-.rz-body {
-    background-color: #ffffff;
-}
-
-
-/* Content styles */
-.container-fluid {
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* Menu styles */
-.rz-panel-menu .rz-navigation-item-link {
-    padding: 0.75rem 1rem;
-}
-
-.rz-panel-menu .rz-navigation-item-icon {
-    margin-right: 0.5rem;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .rz-sidebar {
@@ -138,9 +112,7 @@ h1:focus {
     padding-bottom: 0.5rem;
 }
 
-    .nav-item:first-of-type {
-        padding-top: 1rem;
-    }
+ 
 
     .nav-item:last-of-type {
         padding-bottom: 1rem;
@@ -155,9 +127,9 @@ h1:focus {
         display: flex;
         align-items: center;
         line-height: 3rem;
-        padding: 0 1rem;
+        padding: 0 0rem;
     }
-
+  
     .nav-item ::deep a.active {
         background-color: rgba(255,255,255,0.25);
         color: white;
@@ -213,6 +185,7 @@ h1:focus {
 .btn {
     font-size: 1.2rem; /* Kích thước chữ lớn hơn cho nút */
     padding: 10px 20px; /* Tăng padding cho nút */
+    border-radius: 5%;
 }
 
 .btn-close {
