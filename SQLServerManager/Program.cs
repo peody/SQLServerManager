@@ -33,6 +33,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<ModelGeneratorService>();
 builder.Services.AddScoped<DbContextGenerationService>();
+builder.Services.AddScoped<SequenceService>();
 // Đọc configuration
 builder.Configuration.AddJsonFile("appsettings.json");
 
@@ -42,6 +43,7 @@ builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<ModelGeneratorService>();
+;
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

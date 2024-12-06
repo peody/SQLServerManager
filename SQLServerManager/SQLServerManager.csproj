@@ -14,5 +14,8 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.0" />
   </ItemGroup>
+<PropertyGroup>
+    <NoWarn>RSEXPERIMENTAL003</NoWarn>
+</PropertyGroup>
 
 </Project>

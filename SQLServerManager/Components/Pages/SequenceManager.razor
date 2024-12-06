@@ -1,0 +1,146 @@
+﻿@page "/sequence-manager"
+@using DatabaseSynchronizer.Services
+
+@inject DatabaseService DatabaseService
+@inject SequenceService SequenceService
+
+<h3>Quản Lý Sequence</h3>
+<div class="row-cols-3">
+    <div class="col-2">
+        <label for="databaseSelect">Chọn Cơ Sở Dữ Liệu:</label>
+        <select class="form-control" @bind="selectedDatabase">
+            @foreach (var db in databases)
+            {
+                <option value="@db">@db</option>
+            }
+        </select>
+        <button @onclick="LoadSequences">Tải Sequences</button>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(StatusMessage))
+{
+    <div class="alert @(IsSuccess ? "alert-success" : "alert-danger")">
+        @StatusMessage
+    </div>
+}
+
+<h4>Danh Sách Sequences:</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Tên Sequence</th>
+            <th>Giá Trị Bắt Đầu</th>
+            <th>Giá Trị Tăng</th>
+            <th>Thao Tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var sequence in sequences)
+        {
+            <tr>
+                <td>@sequence.Name</td>
+                <td>@sequence.StartValue</td>
+                <td>@sequence.IncrementValue</td>
+                <td>
+                    <button @onclick="() => EditSequence(sequence)">Sửa</button>
+                    <button @onclick="() => DropSequence(sequence)">Xóa</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>Thêm Sequence Mới:</h4>
+<input type="text" @bind="newSequenceName" placeholder="Tên Sequence" />
+<input type="number" @bind="startValue" placeholder="Giá trị bắt đầu" />
+<input type="number" @bind="incrementValue" placeholder="Giá trị tăng" />
+<button @onclick="CreateSequence">Tạo Sequence</button>
+
+@if (currentValue.HasValue)
+{
+    <p>Giá trị hiện tại: @currentValue</p>
+}
+
+@code {
+    private string selectedDatabase { get; set; }
+    private List<string> databases = new List<string>();
+    private List<Sequence> sequences = new List<Sequence>();
+    private string newSequenceName;
+    private int startValue;
+    private int incrementValue;
+    private int? currentValue;
+    private string StatusMessage { get; set; }
+    private bool IsSuccess { get; set; }
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            databases = DatabaseService.GetDatabases();
+            if (databases.Any())
+            {
+                selectedDatabase = databases.First();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi: {ex.Message}";
+            IsSuccess = false;
+        }
+    }
+
+    private async Task LoadSequences()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(selectedDatabase))
+            {
+                sequences = await SequenceService.GetSequencesAsync(selectedDatabase);
+                await GetCurrentValue();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi khi tải sequences: {ex.Message}";
+            IsSuccess = false;
+        }
+    }
+
+    private async Task CreateSequence()
+    {
+        if (!string.IsNullOrWhiteSpace(newSequenceName))
+        {
+            await SequenceService.CreateSequenceAsync(newSequenceName, startValue, incrementValue);
+            await LoadSequences();
+        }
+    }
+
+    private async Task DropSequence(Sequence sequence)
+    {
+        await SequenceService.DropSequenceAsync(sequence.Name);
+        await LoadSequences();
+    }
+
+    private void EditSequence(Sequence sequence)
+    {
+        newSequenceName = sequence.Name;
+        startValue = sequence.StartValue;
+        incrementValue = sequence.IncrementValue;
+    }
+
+    private async Task GetCurrentValue()
+    {
+        if (sequences.Count > 0)
+        {
+            currentValue = await SequenceService.GetCurrentValueAsync(sequences[0].Name);
+        }
+    }
+
+    public class Sequence
+    {
+        public string Name { get; set; }
+        public int StartValue { get; set; }
+        public int IncrementValue { get; set; }
+    }
+}
