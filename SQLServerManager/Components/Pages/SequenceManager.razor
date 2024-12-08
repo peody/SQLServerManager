@@ -1,6 +1,6 @@
 ﻿@page "/sequence-manager"
 @using DatabaseSynchronizer.Services
-
+@inject IJSRuntime JSRuntime
 @inject DatabaseService DatabaseService
 @inject SequenceService SequenceService
 
@@ -14,7 +14,7 @@
                 <option value="@db">@db</option>
             }
         </select>
-        <button @onclick="LoadSequences">Tải Sequences</button>
+        <button class="btn btn-primary" @onclick="LoadSequences">Tải Sequences</button>
     </div>
 </div>
 
@@ -26,7 +26,7 @@
 }
 
 <h4>Danh Sách Sequences:</h4>
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Tên Sequence</th>
@@ -43,19 +43,19 @@
                 <td>@sequence.StartValue</td>
                 <td>@sequence.IncrementValue</td>
                 <td>
-                    <button @onclick="() => EditSequence(sequence)">Sửa</button>
-                    <button @onclick="() => DropSequence(sequence)">Xóa</button>
+                    <button class="btn btn-warning" @onclick="() => EditSequence(sequence)">Sửa</button>
+                    <button class="btn btn-danger" @onclick="() => DropSequence(sequence)">Xóa</button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<h4>Thêm Sequence Mới:</h4>
-<input type="text" @bind="newSequenceName" placeholder="Tên Sequence" />
-<input type="number" @bind="startValue" placeholder="Giá trị bắt đầu" />
-<input type="number" @bind="incrementValue" placeholder="Giá trị tăng" />
-<button @onclick="CreateSequence">Tạo Sequence</button>
+<h4>Thêm hoặc Sửa Sequence:</h4>
+<input type="text" class="form-control" @bind="newSequenceName" placeholder="Tên Sequence" />
+<input type="number" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" />
+<input type="number" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" />
+<button class="btn btn-success" @onclick="SaveSequence">@((isEditing) ? "Cập Nhật" : "Tạo Sequence")</button>
 
 @if (currentValue.HasValue)
 {
@@ -67,17 +67,18 @@
     private List<string> databases = new List<string>();
     private List<Sequence> sequences = new List<Sequence>();
     private string newSequenceName;
-    private int startValue;
-    private int incrementValue;
-    private int? currentValue;
+    private long startValue;
+    private long incrementValue;
+    private long? currentValue; // Thay đổi từ int? sang long?
     private string StatusMessage { get; set; }
     private bool IsSuccess { get; set; }
+    private bool isEditing = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            databases = DatabaseService.GetDatabases();
+            databases =  DatabaseService.GetDatabases();
             if (databases.Any())
             {
                 selectedDatabase = databases.First();
@@ -96,7 +97,13 @@
         {
             if (!string.IsNullOrEmpty(selectedDatabase))
             {
-                sequences = await SequenceService.GetSequencesAsync(selectedDatabase);
+                var serviceSequences = await SequenceService.GetSequencesAsync(selectedDatabase);
+                sequences = serviceSequences.Select(seq => new Sequence
+                    {
+                        Name = seq.Name,
+                        StartValue = seq.StartValue,
+                        IncrementValue = seq.IncrementValue
+                    }).ToList();
                 await GetCurrentValue();
             }
         }
@@ -107,19 +114,51 @@
         }
     }
 
-    private async Task CreateSequence()
+
+    private async Task SaveSequence()
     {
         if (!string.IsNullOrWhiteSpace(newSequenceName))
         {
-            await SequenceService.CreateSequenceAsync(newSequenceName, startValue, incrementValue);
-            await LoadSequences();
+            try
+            {
+                if (isEditing)
+                {
+                    await SequenceService.AlterSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
+                    StatusMessage = "Cập nhật sequence thành công!";
+                }
+                else
+                {
+                    await SequenceService.CreateSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
+                    StatusMessage = "Tạo sequence thành công!";
+                }
+                IsSuccess = true;
+                await LoadSequences();
+                ResetForm();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Lỗi khi lưu sequence: {ex.Message}";
+                IsSuccess = false;
+            }
         }
     }
 
     private async Task DropSequence(Sequence sequence)
     {
-        await SequenceService.DropSequenceAsync(sequence.Name);
-        await LoadSequences();
+        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Bạn có chắc chắn muốn xóa sequence '{sequence.Name}'?");
+        if (confirm)
+        {
+            try
+            {
+                await SequenceService.DropSequenceAsync(selectedDatabase, sequence.Name);
+                await LoadSequences();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Lỗi khi xóa sequence: {ex.Message}";
+                IsSuccess = false;
+            }
+        }
     }
 
     private void EditSequence(Sequence sequence)
@@ -127,20 +166,29 @@
         newSequenceName = sequence.Name;
         startValue = sequence.StartValue;
         incrementValue = sequence.IncrementValue;
+        isEditing = true;
+    }
+
+    private void ResetForm()
+    {
+        newSequenceName = string.Empty;
+        startValue = 0;
+        incrementValue = 0;
+        isEditing = false;
     }
 
     private async Task GetCurrentValue()
     {
         if (sequences.Count > 0)
         {
-            currentValue = await SequenceService.GetCurrentValueAsync(sequences[0].Name);
+            currentValue = await SequenceService.GetCurrentValueAsync(selectedDatabase, sequences[0].Name);
         }
     }
 
     public class Sequence
     {
         public string Name { get; set; }
-        public int StartValue { get; set; }
-        public int IncrementValue { get; set; }
+        public long StartValue { get; set; }
+        public long IncrementValue { get; set; }
     }
 }
