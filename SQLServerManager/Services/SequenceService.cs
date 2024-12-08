@@ -103,47 +103,6 @@ namespace SQLServerManager.Services
                 return result != null ? (long)result : 0; // Trả về 0 nếu không tìm thấy
             }
         }
-
-        public async Task AlterSequenceAsync(string databaseName, string sequenceName, long? startValue = null, long? increment = null)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                var setClauses = new List<string>();
-
-                if (startValue.HasValue)
-                {
-                    setClauses.Add($"RESTART WITH {startValue.Value}");
-                }
-
-                if (increment.HasValue)
-                {
-                    setClauses.Add($"INCREMENT BY {increment.Value}");
-                }
-
-                if (setClauses.Count > 0)
-                {
-                    string query = $"ALTER SEQUENCE [{sequenceName}] {string.Join(" ", setClauses)}";
-                    using var command = new SqlCommand(query, connection);
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        public async Task GrantAlterPermissionAsync(string sequenceName, string schemaName, string userName)
-        {
-            var sql = $"GRANT ALTER ON OBJECT::[{schemaName}].[{sequenceName}] TO [{userName}]";
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
         private async Task<bool> SequenceExistsAsync(string databaseName, string sequenceName)
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -157,6 +116,83 @@ namespace SQLServerManager.Services
                 return count > 0; // Trả về true nếu sequence tồn tại
             }
         }
+        public async Task ReplaceSequenceAsync(string databaseName, string oldSequenceName, string newSequenceName, long startValue, long incrementValue)
+        {
+            var connectionString = $"Server=.\\SQLEXPRESS;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Bắt đầu giao dịch
+                using var transaction = connection.BeginTransaction();
+                try
+                {
+                    // Kiểm tra xem sequence cũ có tồn tại không
+                    string checkOldSql = $"IF EXISTS (SELECT * FROM sys.sequences WHERE name = '{oldSequenceName}') " +
+                                         $"BEGIN " +
+                                         $"ALTER SEQUENCE [{oldSequenceName}] " +
+                                         $"RESTART WITH {startValue}; " + // Chỉ đặt lại giá trị bắt đầu
+                                         $"ALTER SEQUENCE [{oldSequenceName}] " +
+                                         $"INCREMENT BY {incrementValue}; " + // Cập nhật giá trị tăng
+                                         $"END;";
+                    using (var alterCommand = new SqlCommand(checkOldSql, connection, transaction))
+                    {
+                        await alterCommand.ExecuteNonQueryAsync();
+                        Console.WriteLine($"Đã cập nhật sequence: {oldSequenceName} với Bắt đầu: {startValue}, Tăng: {incrementValue}");
+                    }
+
+                    // Tạo sequence mới nếu cần
+                    if (!string.Equals(oldSequenceName, newSequenceName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string checkNewSql = $"IF NOT EXISTS (SELECT * FROM sys.sequences WHERE name = '{newSequenceName}') " +
+                                             $"BEGIN " +
+                                             $"CREATE SEQUENCE [{newSequenceName}] START WITH {startValue} INCREMENT BY {incrementValue}; " +
+                                             $"END;";
+                        using (var createCommand = new SqlCommand(checkNewSql, connection, transaction))
+                        {
+                            await createCommand.ExecuteNonQueryAsync();
+                            Console.WriteLine($"Đã tạo sequence mới: {newSequenceName}");
+                        }
+
+                        // Xóa sequence cũ
+                        string dropOldSql = $"DROP SEQUENCE IF EXISTS [{oldSequenceName}];";
+                        using (var dropCommand = new SqlCommand(dropOldSql, connection, transaction))
+                        {
+                            await dropCommand.ExecuteNonQueryAsync();
+                            Console.WriteLine($"Đã xóa sequence cũ: {oldSequenceName}");
+                        }
+                    }
+
+                    // Kiểm tra giá trị hiện tại của sequence mới
+                    string checkUpdatedSql = $"SELECT current_value FROM sys.sequences WHERE name = '{newSequenceName}';";
+                    using (var checkCommand = new SqlCommand(checkUpdatedSql, connection, transaction))
+                    {
+                        var currentValue = await checkCommand.ExecuteScalarAsync();
+                        if (currentValue != null)
+                        {
+                            Console.WriteLine($"Giá trị hiện tại của {newSequenceName}: {currentValue}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Không tìm thấy giá trị cho sequence: {newSequenceName}");
+                        }
+                    }
+
+                    // Cam kết giao dịch
+                    transaction.Commit();
+                    Console.WriteLine("Giao dịch đã được cam kết thành công.");
+                }
+                catch (Exception ex)
+                {
+                    // Nếu có lỗi, hoàn tác giao dịch
+                    transaction.Rollback();
+                    Console.WriteLine($"Lỗi khi thay thế sequence: {ex.Message}");
+                    throw;
+                }
+            }
+        }
+
     }
 
     public class Sequence

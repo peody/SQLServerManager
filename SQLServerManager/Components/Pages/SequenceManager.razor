@@ -78,7 +78,7 @@
     {
         try
         {
-            databases =  DatabaseService.GetDatabases();
+            databases = DatabaseService.GetDatabases();
             if (databases.Any())
             {
                 selectedDatabase = databases.First();
@@ -104,6 +104,14 @@
                         StartValue = seq.StartValue,
                         IncrementValue = seq.IncrementValue
                     }).ToList();
+
+                // Ghi log danh sách sequences mới
+                Console.WriteLine("Danh sách sequences mới:");
+                foreach (var seq in sequences)
+                {
+                    Console.WriteLine($"Tên: {seq.Name}, Bắt đầu: {seq.StartValue}, Tăng: {seq.IncrementValue}");
+                }
+
                 await GetCurrentValue();
             }
         }
@@ -115,6 +123,9 @@
     }
 
 
+    string username = Environment.UserName; // Lấy tên người dùng hiện tại
+    string domainAndUsername = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+
     private async Task SaveSequence()
     {
         if (!string.IsNullOrWhiteSpace(newSequenceName))
@@ -123,15 +134,19 @@
             {
                 if (isEditing)
                 {
-                    await SequenceService.AlterSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
+                    await SequenceService.ReplaceSequenceAsync(selectedDatabase, sequences.First(seq => seq.Name == newSequenceName).Name, newSequenceName, startValue, incrementValue);
+                    Console.WriteLine($"Đã cập nhật sequence: {newSequenceName} với Bắt đầu: {startValue}, Tăng: {incrementValue}");
                     StatusMessage = "Cập nhật sequence thành công!";
                 }
+
                 else
                 {
                     await SequenceService.CreateSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
                     StatusMessage = "Tạo sequence thành công!";
                 }
                 IsSuccess = true;
+
+                // Tải lại danh sách sequences
                 await LoadSequences();
                 ResetForm();
             }
@@ -163,10 +178,11 @@
 
     private void EditSequence(Sequence sequence)
     {
+        isEditing = true;
         newSequenceName = sequence.Name;
         startValue = sequence.StartValue;
         incrementValue = sequence.IncrementValue;
-        isEditing = true;
+
     }
 
     private void ResetForm()
