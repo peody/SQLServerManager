@@ -509,6 +509,12 @@
 
 
 </div>
+<style>
+    .modal-body {
+        max-height: 400px; /* Chiều cao tối đa cho phần thân modal */
+        overflow-y: auto; /* Thêm thanh cuộn dọc nếu nội dung vượt quá chiều cao tối đa */
+    }
+</style>
 
 @code {
     private List<string> databases;
@@ -996,17 +1002,24 @@
 
             // Khởi tạo dictionary trống cho record mới
             editingRecord = new Dictionary<string, object>();
+
+            // Thêm các cột vào dictionary, bỏ qua cột identity
             foreach (var column in tableColumns)
             {
-                editingRecord[column.Name] = null;
+                // Kiểm tra xem cột có phải là cột identity hay không
+                if (!column.IsIdentity) // Giả sử có thuộc tính IsIdentity trong column
+                {
+                    editingRecord[column.Name] = null; // Khởi tạo giá trị null cho các cột không phải identity
+                }
             }
 
-            isEditingRecord = false;
-            showRecordModal = true;
-            StateHasChanged();
+            isEditingRecord = false; // Đặt trạng thái không phải đang chỉnh sửa
+            showRecordModal = true; // Hiển thị modal
+            StateHasChanged(); // Cập nhật trạng thái UI
         }
         catch (Exception ex)
         {
+            // Hiển thị thông báo lỗi nếu có
             await JSRuntime.InvokeVoidAsync("alert", $"Error initializing add form: {ex.Message}");
         }
     }

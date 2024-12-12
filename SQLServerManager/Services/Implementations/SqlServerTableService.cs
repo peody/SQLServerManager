@@ -417,6 +417,12 @@ namespace SQLServerManager.Services.Implementations
         // Phương thức bất đồng bộ để chèn một bản ghi mới vào bảng
         public async Task<bool> InsertRecordAsync(string database, string schema, string table, Dictionary<string, object> record)
         {
+            // Kiểm tra và loại bỏ cột ID nếu có (giả sử tên cột là "ID")
+            if (record.ContainsKey("ID"))
+            {
+                record.Remove("ID");
+            }
+
             using (var connection = new SqlConnection(_connectionString)) // Tạo kết nối
             {
                 await connection.OpenAsync(); // Mở kết nối bất đồng bộ
