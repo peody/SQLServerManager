@@ -45,5 +45,7 @@ namespace SQLServerManager.Services.Interfaces
 
         // Phương thức bất đồng bộ để xóa một bản ghi trong bảng
         Task<bool> DeleteRecordAsync(string database, string schema, string table, Dictionary<string, object> record);
+        // Export Excel
+        Task<byte[]> ExportToExcelAsync(List<Dictionary<string, object>> data, List<string> columns);
     }
 }

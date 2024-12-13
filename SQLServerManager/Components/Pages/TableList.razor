@@ -1,5 +1,6 @@
 ﻿@page "/tables"
 @using System.Data
+@using Microsoft.AspNetCore.Mvc
 @inject ITableService TableService
 @inject IDatabaseService DatabaseService
 @inject NavigationManager NavigationManager
@@ -100,6 +101,10 @@
                     <!--add records-->
                     <button class="btn btn-success" @onclick="InitializeAddRecord">
                         <i class="fas fa-plus"></i> Add New Record
+                    </button>
+                    <!-- Export to Excel Button -->
+                    <button class="btn btn-info" @onclick="ExportToExcel">
+                        <i class="fas fa-file-excel"></i> Export to Excel
                     </button>
                 </div>
                 <div class="card-body">
@@ -1159,6 +1164,24 @@
     {
         cts?.Cancel();
     }
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            var data = tableData.Rows.Select(row => ConvertRowToDictionary(row, tableData.Columns)).ToList();
+            var columns = tableData.Columns.ToList();
+            var excelData = await TableService.ExportToExcelAsync(data, columns);
+
+            var base64 = Convert.ToBase64String(excelData);
+            await JSRuntime.InvokeVoidAsync("openFile", base64);
+        }
+        catch (Exception ex)
+        {
+            // Log or handle the exception as needed
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
 
 
 }

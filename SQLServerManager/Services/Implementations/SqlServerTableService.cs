@@ -2,6 +2,7 @@
 
 using Microsoft.Data.SqlClient; // Thư viện để làm việc với SQL Server
 using Microsoft.Extensions.Options; // Thư viện cho tùy chọn cấu hình
+using OfficeOpenXml;
 using SQLServerManager.Models; // Thư viện chứa các mô hình dữ liệu
 
 using SQLServerManager.Services.Interfaces; // Thư viện chứa các interface dịch vụ
@@ -512,6 +513,33 @@ namespace SQLServerManager.Services.Implementations
                     await command.ExecuteNonQueryAsync(); // Thực thi lệnh xóa
                     return true; // Trả về true nếu thành công
                 }
+            }
+        }
+        // Exprot excel
+        public async Task<byte[]> ExportToExcelAsync(List<Dictionary<string, object>> data, List<string> columns)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+
+                // Đặt tiêu đề cột
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    worksheet.Cells[1, i + 1].Value = columns[i];
+                }
+
+                // Thêm dữ liệu vào worksheet
+                for (int i = 0; i < data.Count; i++)
+                {
+                    for (int j = 0; j < columns.Count; j++)
+                    {
+                        worksheet.Cells[i + 2, j + 1].Value = data[i][columns[j]];
+                    }
+                }
+
+                // Trả về file Excel dưới dạng byte array
+                return await Task.FromResult(package.GetAsByteArray());
             }
         }
     }
