@@ -1,0 +1,425 @@
+﻿@page "/diagram"
+@inject IDatabaseService DatabaseService
+@inject ITableService TableService
+@inject IJSRuntime JSRuntime
+
+<h3>Quản Lý Sơ Đồ</h3>
+
+<!-- Dropdown chọn database -->
+<div class="mb-3">
+    <label for="databaseSelect">Chọn Cơ Sở Dữ Liệu:</label>
+
+    <select id="databaseSelect" class="form-control" @onchange="OnDatabaseChange">
+        
+        @foreach (var db in databases)
+        {
+            <option value="@db">@db</option>
+        }
+    </select>
+</div>
+
+<!-- Danh sách bảng -->
+<h4>Danh Sách Bảng</h4>
+<div class="table-container">
+    @if (tables.Count > 0)
+    {
+        @foreach (var table in tables)
+        {
+            <div draggable="true" @ondragstart="(e) => OnDragStart(e, table.Name)" class="table-item">
+                @table.Name
+                <button class="btn btn-sm btn-info ml-2" @onclick="() => ShowTableDetails(table)">Xem Chi Tiết</button>
+            </div>
+        }
+    }
+    else
+    {
+        <p>Không có bảng nào trong database này.</p>
+    }
+</div>
+
+
+<!-- Khu vực sơ đồ -->
+<h4>Sơ Đồ</h4>
+<button class="btn btn-warning mb-3" @onclick="ExportDiagramAsImage">Xuất Sơ Đồ</button>
+
+<div id="diagramCanvas" class="diagram-canvas">
+    <!-- Các bảng sẽ hiển thị tại đây -->
+</div>
+<!-- Modal chi tiết bảng -->
+@if (isTableDetailsVisible)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi Tiết Bảng: @currentTableName</h5>
+                    <button type="button" class="close" @onclick="CloseTableDetails">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tên</th>
+                                <th>Khóa chính</th>
+                                <th>Khóa Ngoại</th>
+                                <th>Bảng Liên Kết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                                @foreach (var column in tableColumns)
+                                {
+                                  <tr>
+                                      <th>@column.Name</th>
+                                      <th>@column.IsPrimaryKey</th>
+                                      <th>@column.IsForeignKey</th>
+                                      <th>@column.ForeignKeyTable</th>
+                                  </tr>  
+                                }
+                            
+                        </tbody>
+                    </table>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseTableDetails">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<string> databases = new(); // Danh sách cơ sở dữ liệu
+    private string selectedDatabase; // Cơ sở dữ liệu được chọn
+    private List<TableInfo> tables = new(); // Danh sách các bảng trong cơ sở dữ liệu
+    private string currentTableName; // Tên bảng hiện tại
+    private List<string> currentTableColumns = new(); // Danh sách cột của bảng hiện tại
+    private bool isCreateDiagramModalVisible = false; // Hiển thị modal tạo sơ đồ
+    private bool isTableDetailsVisible = false; // Hiển thị modal chi tiết bảng
+    private string newDiagramName = string.Empty; // Tên sơ đồ mới
+    private List<ColumnInfo> tableColumns;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            databases.Add("VUI LONG CHON DI DO NGU");
+            databases = await DatabaseService.GetDatabasesAsync();
+            
+            selectedDatabase = databases.FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(selectedDatabase))
+            {
+                await LoadTablesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi tải danh sách cơ sở dữ liệu: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(selectedDatabase))
+                {
+                    Console.WriteLine("Không có cơ sở dữ liệu nào được chọn.");
+                    return;
+                }
+
+                // Lấy danh sách các bảng từ backend
+                tables = await TableService.GetTablesAsync(selectedDatabase);
+                Console.WriteLine($"Số lượng bảng: {tables.Count}");
+
+                // Lấy danh sách các quan hệ giữa các bảng
+                var connections = await GetTableConnections();
+                Console.WriteLine($"Số lượng quan hệ: {connections.Count}");
+
+                // Gửi danh sách bảng và quan hệ sang JavaScript để hiển thị sơ đồ
+                await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections);
+
+                Console.WriteLine("Sơ đồ và quan hệ đã được hiển thị.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi khởi tạo sơ đồ: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task OnDatabaseChange(ChangeEventArgs e)
+    {
+        selectedDatabase = e.Value.ToString();
+
+        // Tải lại danh sách bảng khi chọn database khác
+        await LoadTablesAsync();
+
+        // Tải lại sơ đồ với dữ liệu mới
+        await ReloadDiagramAsync();
+    }
+    private async Task ReloadDiagramAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(selectedDatabase))
+            {
+                Console.WriteLine("Không có cơ sở dữ liệu nào được chọn.");
+                return;
+            }
+
+            // Lấy danh sách các bảng từ backend
+            tables = await TableService.GetTablesAsync(selectedDatabase);
+
+            if (tables == null || !tables.Any())
+            {
+                Console.WriteLine("Không có bảng nào trong cơ sở dữ liệu này.");
+                return;
+            }
+
+            // Lấy danh sách các quan hệ giữa các bảng
+            var connections = await GetTableConnections();
+
+            // Gửi danh sách bảng và quan hệ sang JavaScript để vẽ lại sơ đồ
+            await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections);
+
+            Console.WriteLine("Sơ đồ đã được tải lại.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi tải lại sơ đồ: {ex.Message}");
+        }
+    }
+
+
+    private async Task LoadTablesAsync()
+    {
+        if (string.IsNullOrEmpty(selectedDatabase))
+        {
+            Console.WriteLine("Không có cơ sở dữ liệu nào được chọn.");
+            return;
+        }
+
+        try
+        {
+            tables = await TableService.GetTablesAsync(selectedDatabase);
+            if (tables == null || !tables.Any())
+            {
+                Console.WriteLine("Không có bảng nào trong cơ sở dữ liệu này.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi tải danh sách bảng: {ex.Message}");
+        }
+    }
+
+
+    private void ShowCreateDiagramModal()
+    {
+        isCreateDiagramModalVisible = true;
+    }
+
+    private void CloseCreateDiagramModal()
+    {
+        isCreateDiagramModalVisible = false;
+        newDiagramName = string.Empty;
+    }
+
+    private async Task CreateDiagram()
+    {
+        if (string.IsNullOrWhiteSpace(newDiagramName))
+        {
+            Console.WriteLine("Tên sơ đồ không được để trống.");
+            return;
+        }
+
+        try
+        {
+            // Gọi JavaScript để tạo sơ đồ mới
+            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", newDiagramName);
+
+            Console.WriteLine($"Sơ đồ mới được tạo: {newDiagramName}");
+
+            // Đóng modal sau khi tạo sơ đồ
+            CloseCreateDiagramModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi tạo sơ đồ: {ex.Message}");
+        }
+    }
+
+
+    private async Task ShowTableDetails(TableInfo table)
+    {
+        tableColumns = await TableService.GetColumnsAsync(
+                    selectedDatabase,
+                    table.Schema,
+                    table.Name
+                );
+
+
+        isTableDetailsVisible = true;
+    }
+
+    private void CloseTableDetails()
+    {
+        isTableDetailsVisible = false;
+    }
+
+    private async Task OnDragStart(DragEventArgs e, string tableName)
+    {
+        if (string.IsNullOrEmpty(tableName))
+        {
+            Console.WriteLine("Tên bảng không hợp lệ.");
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", tableName);
+
+            // Lấy lại danh sách quan hệ (sau khi thêm bảng)
+            var connections = await GetTableConnections();
+
+            // Cập nhật quan hệ trên sơ đồ
+            await JSRuntime.InvokeVoidAsync("diagramManager.drawConnections", connections);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi kéo bảng vào sơ đồ: {ex.Message}");
+        }
+    }
+
+
+
+    private async Task SaveDiagram()
+    {
+        try
+        {
+            var diagramData = await JSRuntime.InvokeAsync<DiagramData>("diagramManager.getDiagramData");
+            Console.WriteLine($"Lưu sơ đồ: {diagramData}");
+            // Lưu sơ đồ vào cơ sở dữ liệu
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi lưu sơ đồ: {ex.Message}");
+        }
+    }
+
+    private async Task ExportDiagramAsImage()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("diagramManager.exportAsImage");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Lỗi khi xuất sơ đồ: {ex.Message}");
+        }
+    }
+    private async Task <List<TableConnection>> GetTableConnections()
+    {
+        var connections = new List<TableConnection>();
+
+        foreach (var table in tables)
+        {
+            // Lấy danh sách cột của bảng hiện tại
+            var columns = await TableService.GetColumnsAsync(
+                    selectedDatabase,
+                    table.Schema,
+                    table.Name
+                );
+
+            foreach (var column in columns)
+            {
+                if (column.IsForeignKey && !string.IsNullOrEmpty(column.ForeignKeyTable))
+                {
+                    connections.Add(new TableConnection
+                        {
+                            SourceTable = table.Name,
+                            TargetTable = column.ForeignKeyTable,
+                            ForeignKeyColumn = column.Name
+                        });
+                }
+            }
+        }
+
+        return connections;
+    }
+
+    public class DiagramData
+    {
+        public List<ElementData> Elements { get; set; } = new();
+        public List<ConnectionData> Connections { get; set; } = new();
+    }
+
+    public class ElementData
+    {
+        public string Id { get; set; }
+        public Position Position { get; set; }
+    }
+
+    public class ConnectionData
+    {
+        public string Source { get; set; }
+        public string Target { get; set; }
+    }
+
+    public class Position
+    {
+        public int Top { get; set; }
+        public int Left { get; set; }
+    }
+    public class TableConnection
+    {
+        public string SourceTable { get; set; } // Tên bảng nguồn
+        public string TargetTable { get; set; } // Tên bảng đích (bảng liên kết)
+        public string ForeignKeyColumn { get; set; } // Tên cột khóa ngoại
+    }
+
+}
+
+<style>
+    .diagram-canvas {
+        position: relative;
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        overflow: auto;
+        z-index: 1;
+    }
+
+    .table-container {
+        display: grid; /* Sử dụng Grid Layout */
+        grid-template-columns: repeat(4, 1fr); /* Chia thành 4 cột cố định */
+        gap: 20px; /* Khoảng cách giữa các items */
+        padding: 10px; /* Khoảng cách bên trong container */
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+    }
+
+    .table-item {
+        display: flex; /* Dùng Flexbox để căn chỉnh nội dung bên trong */
+        flex-direction: column; /* Đặt nội dung theo chiều dọc */
+        justify-content: center; /* Căn giữa nội dung theo chiều ngang */
+        align-items: center; /* Căn giữa nội dung theo chiều dọc */
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        cursor: grab;
+        user-select: none;
+        height: 80px; /* Chiều cao cố định cho item */
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Hiệu ứng đổ bóng */
+    }
+
+    .connection-line {
+        position: absolute;
+        z-index: 4; /* Đảm bảo các đường kết nối nằm trên sơ đồ */
+    }
+</style>
