@@ -8,13 +8,13 @@
     <div class="slider">
         <div class="slides">
             <div class="image-c">
-                <img src="/images/SQL-Server-1-1.jpg" />
+                <img src="/images/08f8a4e47948c3169a59.jpg" />
             </div>
             <div class="image-c">
-                <img src="/images/database.jpg" />
+                <img src="/images/database-design.jpg" />
             </div>
             <div class="image-c">
-                <img src="/images/SQLpt1-3.jpg" />
+                <img src="/images/bfc6523f889332cd6b82.jpg" />
             </div>
         </div>
     </div>
@@ -43,6 +43,57 @@
         </div>
     </div>
 </div>
+<section class="gym-trainers">
+    <h2>Đội Ngũ Phát Triển</h2>
+    <div class="trainer-cards">
+        <div class="trainer-card">
+            <img src="/images/af8f3c8d-947c-47a9-82ee-020851dd3f02.jpg" alt="Dũng TH">
+            <h3>Nguyễn Tuấn Dũng</h3>
+            <div class="social-icons">
+                <a href="https://web.facebook.com/dtnguyenn.11" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="trainer-card">
+            <img src="/images/a307a408-814b-439a-96c9-347a9ece77b8.jpg" alt="Duy">
+            <h3>Lê Ngọc Duy</h3>
+            <div class="social-icons">
+                <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="trainer-card">
+            <img src="/images/91a5d9cc-e1b2-4874-b212-18a72255e7b3.jpg" alt="LVTD">
+            <h3>Lưu Vũ Thành Đạt</h3>
+            <div class="social-icons">
+                <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="trainer-card">
+            <img src="/images/cd269c16-355b-490b-829c-633b9748b827.jpg" alt="Boy Hải Dương">
+            <h3>Đào Quang Đạt</h3>
+            <div class="social-icons">
+                <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="trainer-card">
+            <img src="/images/39de56d0-1f72-4385-a985-49ee0ef9cd6a.jpg" alt="Khởi Canva">
+            <h3>Bùi Khắc Khởi</h3>
+            <div class="social-icons">
+                <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
+</section>
+
 
 <footer>
     <div class="contact">
@@ -62,19 +113,12 @@
             </li>
         </ul>
     </div>
-    <div class="social-media">
-        <h3>Theo dõi chúng tôi</h3>
-        <div class="social-icons">
-            <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
-            <a href="#" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-        </div>
-    </div>
-    <div class="copyright">
-        <p>&copy; 2023 Tên Công ty. Bản quyền đã được bảo vệ.</p>
-    </div>
+    
+    
 </footer>
+
+
+
 
 
 
@@ -101,7 +145,7 @@
 
     .prev, .next {
         position: absolute;
-        top: 30%;
+        top: 20%;
         transform: translateY(-50%);
         background-color: rgba(255, 255, 255, 0.5);
         border: none;
@@ -164,10 +208,12 @@
     }
 
     footer {
+
     background-color: #333;
     color: #fff;
-    padding: 40px 0;
+    padding: 10px 0;
     font-size: 14px;
+    margin-top:10px;
 }
 
 .contact, .social-media {
@@ -196,26 +242,93 @@
     margin-right: 10px;
 }
 
-.social-icons {
-    display: flex;
-    justify-content: center;
-}
 
-.social-icons a {
-    color: #fff;
-    font-size: 20px;
-    margin: 0 10px;
-    transition: color 0.3s;
-}
-
-.social-icons a:hover {
-    color: #007BFF;
-}
 
 .copyright {
     text-align: center;
     margin-top: 30px;
 }
+
+    .gym-trainers {
+        text-align: center;
+        padding: 60px 0;
+        background-image: url('/images/background-dep-1.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+        .gym-trainers h2 {
+            margin-bottom: 40px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+    .trainer-cards {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .trainer-card {
+        width: 180px; /* Giảm chiều rộng của mỗi khung */
+        margin: 20px 10px; /* Giảm khoảng cách giữa các khung */
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+        .trainer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .trainer-card img {
+            width: 100%;
+            height: 180px; /* Giảm chiều cao của ảnh */
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .trainer-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .trainer-card h3 {
+            margin: 15px 0;
+            color: #333;
+            transition: color 0.3s;
+        }
+
+        .trainer-card:hover h3 {
+            color: #007BFF;
+        }
+
+    .social-icons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+        transition: transform 0.3s;
+    }
+
+    .trainer-card:hover .social-icons {
+        transform: translateY(5px);
+    }
+
+    .social-icons a {
+        color: #333;
+        font-size: 16px; /* Giảm kích thước icon */
+        margin: 0 6px; /* Giảm khoảng cách giữa các icon */
+        transition: color 0.3s;
+    }
+
+        .social-icons a:hover {
+            color: #007BFF;
+        }
+
+
 </style>
 
 <script>

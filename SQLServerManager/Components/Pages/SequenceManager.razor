@@ -51,17 +51,47 @@
     </tbody>
 </table>
 
-<h4>Thêm hoặc Sửa Sequence:</h4>
+<h4>Thêm Sequence:</h4>
 <input type="text" class="form-control" @bind="newSequenceName" placeholder="Tên Sequence" />
 <input type="number" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" />
 <input type="number" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" />
-<button class="btn btn-success" @onclick="SaveSequence">@((isEditing) ? "Cập Nhật" : "Tạo Sequence")</button>
+<button class="btn btn-success" @onclick="CreateSequence">Tạo Sequence</button>
+
+<h4>Sửa Sequence:</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tên Sequence</th>
+            <th>Giá Trị Bắt Đầu</th>
+            <th>Giá Trị Tăng</th>
+            <th>Thao Tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (selectedSequence != null)
+        {
+            <tr>
+                <td>
+                    <input type="text" class="form-control" @bind="selectedSequence.Name" />
+                </td>
+                <td>
+                    <input type="number" class="form-control" @bind="selectedSequence.StartValue" />
+                </td>
+                <td>
+                    <input type="number" class="form-control" @bind="selectedSequence.IncrementValue" />
+                </td>
+                <td>
+                    <button class="btn btn-success" @onclick="UpdateSequence">Cập Nhật</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @if (currentValue.HasValue)
 {
     <p>Giá trị hiện tại: @currentValue</p>
 }
-
 @code {
     private string selectedDatabase { get; set; }
     private List<string> databases = new List<string>();
@@ -73,7 +103,7 @@
     private string StatusMessage { get; set; }
     private bool IsSuccess { get; set; }
     private bool isEditing = false;
-
+    private Sequence selectedSequence;
     protected override async Task OnInitializedAsync()
     {
         try
@@ -178,11 +208,12 @@
 
     private void EditSequence(Sequence sequence)
     {
-        isEditing = true;
-        newSequenceName = sequence.Name;
-        startValue = sequence.StartValue;
-        incrementValue = sequence.IncrementValue;
-
+        selectedSequence = new Sequence
+            {
+                Name = sequence.Name,
+                StartValue = sequence.StartValue,
+                IncrementValue = sequence.IncrementValue
+            };
     }
 
     private void ResetForm()
@@ -190,7 +221,6 @@
         newSequenceName = string.Empty;
         startValue = 0;
         incrementValue = 0;
-        isEditing = false;
     }
 
     private async Task GetCurrentValue()
@@ -206,5 +236,47 @@
         public string Name { get; set; }
         public long StartValue { get; set; }
         public long IncrementValue { get; set; }
+    }
+    private async Task UpdateSequence()
+    {
+        if (selectedSequence != null)
+        {
+            try
+            {
+                await SequenceService.ReplaceSequenceAsync(selectedDatabase, selectedSequence.Name, selectedSequence.Name, selectedSequence.StartValue, selectedSequence.IncrementValue);
+                StatusMessage = "Cập nhật sequence thành công!";
+                IsSuccess = true;
+
+                // Tải lại danh sách sequences
+                await LoadSequences();
+                selectedSequence = null;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Lỗi khi cập nhật sequence: {ex.Message}";
+                IsSuccess = false;
+            }
+        }
+    }
+    private async Task CreateSequence()
+    {
+        if (!string.IsNullOrWhiteSpace(newSequenceName))
+        {
+            try
+            {
+                await SequenceService.CreateSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
+                StatusMessage = "Tạo sequence thành công!";
+                IsSuccess = true;
+
+                // Tải lại danh sách sequences
+                await LoadSequences();
+                ResetForm();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Lỗi khi tạo sequence: {ex.Message}";
+                IsSuccess = false;
+            }
+        }
     }
 }
