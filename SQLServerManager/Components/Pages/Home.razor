@@ -332,27 +332,27 @@
 </style>
 
 <script>
-    let currentSlide = 0;
+    let currentSlideIndex = 0;
 
-    function showSlide(index) {
-        const slides = document.querySelector('.slides');
-        const totalSlides = document.querySelectorAll('.image-c').length;
+    const slider = document.querySelector('.slides');
+    const totalSlides = document.querySelectorAll('.image-c').length;
 
+    function displaySlide(index) {
         // Xử lý chỉ số slide
         if (index >= totalSlides) {
-            currentSlide = 0;
+            currentSlideIndex = 0;
         } else if (index < 0) {
-            currentSlide = totalSlides - 1;
+            currentSlideIndex = totalSlides - 1;
         } else {
-            currentSlide = index;
+            currentSlideIndex = index;
         }
 
         // Cập nhật vị trí của slides
-        slides.style.transform = `translateX(-${currentSlide * 100}%)`;
+        slider.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
     }
 
     function changeSlide(direction) {
-        showSlide(currentSlide + direction);
+        displaySlide(currentSlideIndex + direction);
     }
 
     // Tự động chuyển slide mỗi 3 giây
@@ -360,8 +360,13 @@
         changeSlide(1);
     }, 3000);
 
+    // Gán sự kiện cho các nút trước và sau
+    document.querySelector('.prev').addEventListener('click', () => changeSlide(-1));
+    document.querySelector('.next').addEventListener('click', () => changeSlide(1));
+
     // Hiển thị slide đầu tiên
-    showSlide(currentSlide);
+    displaySlide(currentSlideIndex);
 </script>
+
 
 
