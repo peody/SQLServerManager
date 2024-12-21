@@ -51,42 +51,61 @@
     </tbody>
 </table>
 
-<h4>Thêm Sequence:</h4>
-<input type="text" class="form-control" @bind="newSequenceName" placeholder="Tên Sequence" />
-<input type="number" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" />
-<input type="number" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" />
-<button class="btn btn-success" @onclick="CreateSequence">Tạo Sequence</button>
+<!-- Nút để mở modal -->
+<button class="btn btn-secondary" @onclick="() => isAddingSequence = true">
+    Thêm Sequence
+</button>
 
-<h4>Sửa Sequence:</h4>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Tên Sequence</th>
-            <th>Giá Trị Bắt Đầu</th>
-            <th>Giá Trị Tăng</th>
-            <th>Thao Tác</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (selectedSequence != null)
-        {
-            <tr>
-                <td>
-                    <input type="text" class="form-control" @bind="selectedSequence.Name" />
-                </td>
-                <td>
-                    <input type="number" class="form-control" @bind="selectedSequence.StartValue" />
-                </td>
-                <td>
-                    <input type="number" class="form-control" @bind="selectedSequence.IncrementValue" />
-                </td>
-                <td>
+<!-- Modal -->
+<div class="modal @(isAddingSequence ? "show" : "")" style="display: @(isAddingSequence ? "block" : "none")" tabindex="-1" role="dialog" aria-hidden="@(isAddingSequence ? "false" : "true")">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm Sequence</h5>
+                <button type="button" class="close" @onclick="() => isAddingSequence = false" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="form-control" @bind="newSequenceName" placeholder="Tên Sequence" />
+                <input type="number" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" />
+                <input type="number" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" />
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="() => isAddingSequence = false">Hủy</button>
+                <button class="btn btn-success" @onclick="CreateSequence">Tạo Sequence</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Sửa Sequence -->
+@if (isEditingSequence)
+{
+    <div class="modal show" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sửa Sequence</h5>
+                    <button type="button" class="close" @onclick="() => isEditingSequence = false" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control" @bind="selectedSequence.Name" placeholder="Tên Sequence" />
+                    <input type="number" class="form-control" @bind="selectedSequence.StartValue" placeholder="Giá trị bắt đầu" />
+                    <input type="number" class="form-control" @bind="selectedSequence.IncrementValue" placeholder="Giá trị tăng" />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => isEditingSequence = false">Hủy</button>
                     <button class="btn btn-success" @onclick="UpdateSequence">Cập Nhật</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 
 @if (currentValue.HasValue)
 {
@@ -103,7 +122,13 @@
     private string StatusMessage { get; set; }
     private bool IsSuccess { get; set; }
     private bool isEditing = false;
-    private Sequence selectedSequence;
+    private Sequence selectedSequence = new Sequence();
+
+    
+    private bool isEditingSequence = false; // Biến để theo dõi trạng thái hiển thị bảng sửa sequence
+
+    private bool isAddingSequence = false; // Biến để theo dõi trạng thái hiển thị bảng thêm sequence
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -208,13 +233,13 @@
 
     private void EditSequence(Sequence sequence)
     {
-        selectedSequence = new Sequence
-            {
-                Name = sequence.Name,
-                StartValue = sequence.StartValue,
-                IncrementValue = sequence.IncrementValue
-            };
+        selectedSequence.Name = sequence.Name;
+        selectedSequence.StartValue = sequence.StartValue;
+        selectedSequence.IncrementValue = sequence.IncrementValue;
+        isEditingSequence = true;
     }
+
+
 
     private void ResetForm()
     {
@@ -257,6 +282,8 @@
                 IsSuccess = false;
             }
         }
+        isEditingSequence = false;
+
     }
     private async Task CreateSequence()
     {
