@@ -56,7 +56,7 @@
                     <button type="button" class="close" @onclick="CloseTableDetails">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <table>
+                    <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
                                 <th>Tên</th>
@@ -66,20 +66,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            
-                                @foreach (var column in tableColumns)
-                                {
-                                  <tr>
-                                      <th>@column.Name</th>
-                                      <th>@column.IsPrimaryKey</th>
-                                      <th>@column.IsForeignKey</th>
-                                      <th>@column.ForeignKeyTable</th>
-                                  </tr>  
-                                }
-                            
+                            @foreach (var column in tableColumns)
+                            {
+                                <tr>
+                                    <td>@column.Name</td>
+                                    <td>@column.IsPrimaryKey</td>
+                                    <td>@column.IsForeignKey</td>
+                                    <td>@column.ForeignKeyTable</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
-                    
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="CloseTableDetails">Đóng</button>
@@ -88,6 +85,7 @@
         </div>
     </div>
 }
+
 
 @code {
     private List<string> databases = new(); // Danh sách cơ sở dữ liệu

@@ -3,6 +3,19 @@
 <PageTitle>Home</PageTitle>
 
 
+<div>
+    <marquee behavior="scroll" direction="left">
+        
+        <h8 style="font-size: 30px;
+        font-family: 'Verdana', sans-serif;font-weight: bold;
+">Welcome to our Project!</h8>
+    </marquee>
+
+
+
+</div>
+
+
 
     
     <div class="slider">
@@ -26,28 +39,25 @@
     <h2>WHY CHOOSING US</h2>
     <div class="reasons">
         <div class="reason">
-            <h3>Quality Service</h3>
-            <p>We provide top-notch services that meet your needs and exceed your expectations.</p>
+            <h3>Ứng Dụng Dễ Dùng</h3>
+            <p>Chúng tôi cung cấp giải pháp tối ưu, đơn giản hóa khi làm việc với SQL.</p>
         </div>
         <div class="reason">
-            <h3>Expert Team</h3>
-            <p>Our team consists of experienced professionals dedicated to delivering the best results.</p>
+            <h3>Đội Ngũ Chất Lượng</h3>
+            <p>Nhóm của chúng tôi bao gồm các thành viên có kinh nghiệm, tận tâm mang lại những kết quả tốt nhất.</p>
         </div>
         <div class="reason">
-            <h3>Customer Satisfaction</h3>
-            <p>We prioritize our customers and ensure their satisfaction through personalized support.</p>
+            <h3>Quan Tâm Đến Người Dùng</h3>
+            <p>Luôn lắng nghe mọi sự đóng góp từ người dùng.</p>
         </div>
-        <div class="reason">
-            <h3>Affordable Prices</h3>
-            <p>We offer competitive pricing without compromising on quality.</p>
-        </div>
+        
     </div>
 </div>
 <section class="gym-trainers">
     <h2>Đội Ngũ Phát Triển </h2>
     <div class="trainer-cards">
         <div class="trainer-card">
-            <img src="/images/af8f3c8d-947c-47a9-82ee-020851dd3f02.jpg" alt="Dũng TH">
+            <img src="/images/download (2).jpg" alt="Dũng TH">
             <h3>Nguyễn Tuấn Dũng</h3>
             <div class="social-icons">
                 <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
@@ -56,7 +66,7 @@
             </div>
         </div>
         <div class="trainer-card">
-            <img src="/images/a307a408-814b-439a-96c9-347a9ece77b8.jpg" alt="Duy">
+            <img src="/images/f5b3634c-c264-480f-81dc-4d41b0b2dd10.jpg" alt="Duy">
             <h3>Lê Ngọc Duy</h3>
             <div class="social-icons">
                 <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
@@ -74,7 +84,7 @@
             </div>
         </div>
         <div class="trainer-card">
-            <img src="/images/cd269c16-355b-490b-829c-633b9748b827.jpg" alt="Boy Hải Dương">
+            <img src="/images/download (1).jpg" alt="Boy Hải Dương">
             <h3>Đào Quang Đạt</h3>
             <div class="social-icons">
                 <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
@@ -83,7 +93,7 @@
             </div>
         </div>
         <div class="trainer-card">
-            <img src="/images/39de56d0-1f72-4385-a985-49ee0ef9cd6a.jpg" alt="Khởi Canva">
+            <img src="/images/2b7e281a-a27f-4eca-87ca-98315bfdf9b2.jpg" alt="Khởi Canva">
             <h3>Bùi Khắc Khởi</h3>
             <div class="social-icons">
                 <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
@@ -97,7 +107,7 @@
 
 <footer>
     <div class="contact">
-        <h3>Liên hệ với chúng tôi</h3>
+        <h3 style="color:aqua;">Liên hệ với chúng tôi</h3>
         <ul>
             <li>
                 <i class="fas fa-map-marker-alt"></i>
@@ -328,6 +338,33 @@
         .social-icons a:hover {
             color: #007BFF;
         }
+.marquee-container {
+        overflow: hidden;
+        white-space: nowrap;
+        width: 100%; /* Chiều rộng của khu vực marquee */
+        background-color: #f0f0f0; /* Màu nền */
+    }
+
+    .marquee {
+
+        display: inline-block;
+        animation: marquee 10s linear infinite; /* Thay đổi thời gian để điều chỉnh tốc độ */
+    }
+    
+        
+    
+
+    keyframes marquee {
+        from {
+            transform: translateX(100%); /* Bắt đầu từ bên phải */
+        }
+        to {
+            transform: translateX(-100%); /* Kết thúc bên trái */
+        }
+    }
+
+
+
 
 
 </style>

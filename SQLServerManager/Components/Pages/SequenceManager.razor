@@ -233,10 +233,16 @@
 
     private void EditSequence(Sequence sequence)
     {
-        selectedSequence.Name = sequence.Name;
-        selectedSequence.StartValue = sequence.StartValue;
-        selectedSequence.IncrementValue = sequence.IncrementValue;
-        isEditingSequence = true;
+        if (sequence != null)
+        {
+            selectedSequence = new Sequence
+                {
+                    Name = sequence.Name,
+                    StartValue = sequence.StartValue,
+                    IncrementValue = sequence.IncrementValue
+                };
+            isEditingSequence = true;
+        }
     }
 
 
@@ -283,7 +289,6 @@
             }
         }
         isEditingSequence = false;
-
     }
     private async Task CreateSequence()
     {
