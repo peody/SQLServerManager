@@ -61,7 +61,7 @@
                         <th>Rows</th>
                         <th>Size</th>
                         <th>Created Date</th>
-                        <th>Actions</th>
+                        <th class="action-column" style="width: 80px;">Actions</th> <!-- Thay đổi chiều rộng -->
                     </tr>
                 </thead>
                 <tbody>
@@ -73,13 +73,13 @@
                             <td>@table.RowCount.ToString("N0")</td>
                             <td>@((table.SizeKB / 1024.0).ToString("N2")) MB</td>
                             <td>@table.CreateDate.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td class="table-actions">
+                            <td class="action-column">
                                 <div class="btn-group">
                                     <button class="btn btn-primary btn-sm" @onclick="() => ViewTableData(table)">
-                                        <i class="fas fa-table"></i> Data
+                                        <i class="fas fa-table"></i>
                                     </button>
                                     <button class="btn btn-info btn-sm" @onclick="() => ShowColumnsModal(table)">
-                                        <i class="fas fa-columns"></i> Columns
+                                        <i class="fas fa-columns"></i>
                                     </button>
                                     <button class="btn btn-danger btn-sm" @onclick="() => ConfirmAndDeleteTable(table)">
                                         <i class="fas fa-trash"></i>
@@ -91,6 +91,7 @@
                 </tbody>
             </table>
         </div>
+
         <!-- Data of table-->
         @if (tableData != null && DataModal && showTableData)
         {
@@ -121,7 +122,7 @@
                                             </button>
                                         </th>
                                     }
-                                    <th>Actions</th><!--them phan nay-->
+                                    <th class="action-column" style="width: 80px;">Actions</th> <!-- Thay đổi chiều rộng -->
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,16 +133,12 @@
                                         {
                                             <td>@(cell?.ToString() ?? "NULL")</td>
                                         }
-                                        <!-- them phan nay-->
-                                        <td>
+                                        <td class="action-column">
                                             <div class="btn-group">
                                                 <button class="btn btn-primary btn-sm" @onclick="() => InitializeEditRecord(row)">
-                                                    Edit
-
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button class="btn btn-danger btn-sm"
-                                                        @onclick="() => DeleteRecord(ConvertRowToDictionary(row, tableData.Columns))">
+                                                <button class="btn btn-danger btn-sm" @onclick="() => DeleteRecord(ConvertRowToDictionary(row, tableData.Columns))">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -173,6 +170,7 @@
                 <button type="button" class="btn btn-secondary" @onclick="CloseDataModals">Close</button>
             </div>
         }
+
     }
     <!-- Create Table Modal -->
     @if (showCreateModal)
@@ -413,18 +411,50 @@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="form-check mt-4">
+                                            <div class="form-check mt-sm-4">
+                                                <div>
                                                 <input type="checkbox" class="form-check-input" @bind="editingColumn.IsNullable" />
                                                 <label class="form-check-label">Nullable</label>
+                                                </div>
+                                                <div>
+                                                <input type="checkbox" class="form-check-input" @bind="editingColumn.IsPrimaryKey" />
+                                                <label class="form-check-label">Primary Key</label>
+                                                </div>
+                                                <div>
+                                                    <input type="checkbox" class="form-check-input" @bind="editingColumn.IsForeignKey" />
+                                                    <label class="form-check-label">Foreign Key</label>
+                                                </div>
+                                                
+                                                    
+                                                    <label class="form-check-label">FK Reference</label>
+                                                    @if (editingColumn.IsForeignKey)
+                                                    {
+
+                                                        <select class="form-select form-select-sm" @bind="editingColumn.ForeignKeyTable">
+                                                            <option value="">Select Table</option>
+                                                            @if (tables != null)
+                                                            {
+                                                                @foreach (var table in tables)
+                                                                {
+                                                                    <option value="@($"{table.Schema}.{table.Name}")">@($"{table.Schema}.{table.Name}")</option>
+                                                                }
+                                                            }
+                                                        </select>
+                                                        @if (!string.IsNullOrEmpty(editingColumn.ForeignKeyTable))
+                                                        {
+                                                            <select class="form-select form-select-sm" @bind="editingColumn.ForeignKeyColumn">
+                                                                <option value="">Select Column</option>
+                                                                @foreach (var fkColumn in GetForeignKeyColumns(editingColumn.ForeignKeyTable))
+                                                                {
+                                                                    <option value="@fkColumn.Name">@fkColumn.Name</option>
+                                                                }
+                                                            </select>
+                                                        }
+
+                                                    }
+                                                
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label>Default Value:</label>
-                                                <input type="text" class="form-control" @bind="editingColumn.DefaultValue" />
-                                            </div>
+                                            
                                         </div>
                                     </div>
                                     <div class="mt-3">
@@ -445,8 +475,11 @@
                                             <th>Data Type</th>
                                             <th>Length</th>
                                             <th>Nullable</th>
-                                            <th>Default Value</th>
-                                            <th>Actions</th>
+                                            <th>Primary Key</th>
+                                            <th>Identity</th>
+                                            <th>Foreign Key</th>
+                                            <th>FK Reference</th>
+                                            <th style="width : 70px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -457,8 +490,11 @@
                                                 <td>@column.DataType</td>
                                                 <td>@column.MaxLength</td>
                                                 <td>@(column.IsNullable ? "Yes" : "No")</td>
-                                                <td>@column.DefaultValue</td>
-                                                <td>
+                                                <td>@(column.IsPrimaryKey ? "Yes" : "No")</td>
+                                                <td>@(column.IsIdentity  ? "Yes" : "No")</td>
+                                                <td>@(column.IsForeignKey ? "Yes" : "No")</td>
+                                                <td>@(column.ForeignKeyColumn)</td>
+                                                <td style="width: 70px; display: flex; justify-content: space-between;">
                                                     <button class="btn btn-primary btn-sm" @onclick="() => InitializeEditColumn(column)">
                                                         <i class="fas fa-edit"></i>
                                                     </button>

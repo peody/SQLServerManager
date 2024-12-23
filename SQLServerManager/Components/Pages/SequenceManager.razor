@@ -67,9 +67,18 @@
                 </button>
             </div>
             <div class="modal-body">
+                
                 <input type="text" class="form-control" @bind="newSequenceName" placeholder="Tên Sequence" />
-                <input type="number" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" />
-                <input type="number" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" />
+                <div class="form-group">
+                    <label for="startValue">Giá trị bắt đầu</label>
+                    <input type="number" id="startValue" class="form-control" @bind="startValue" placeholder="Giá trị bắt đầu" min="1" />
+                </div>
+
+                <div class="form-group">
+                    <label for="incrementValue">Giá trị tăng</label>
+                    <input type="number" id="incrementValue" class="form-control" @bind="incrementValue" placeholder="Giá trị tăng" min="1" />
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" @onclick="() => isAddingSequence = false">Hủy</button>
@@ -94,8 +103,16 @@
                 </div>
                 <div class="modal-body">
                     <input type="text" class="form-control" @bind="selectedSequence.Name" placeholder="Tên Sequence" />
-                    <input type="number" class="form-control" @bind="selectedSequence.StartValue" placeholder="Giá trị bắt đầu" />
-                    <input type="number" class="form-control" @bind="selectedSequence.IncrementValue" placeholder="Giá trị tăng" />
+                    <div class="form-group">
+                        <label for="startValue">Giá trị bắt đầu</label>
+                        <input type="number" id="startValue" class="form-control" @bind="selectedSequence.StartValue" placeholder="Giá trị bắt đầu" min="1" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="incrementValue">Giá trị tăng</label>
+                        <input type="number" id="incrementValue" class="form-control" @bind="selectedSequence.IncrementValue" placeholder="Giá trị tăng" min="1" />
+                    </div>
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="() => isEditingSequence = false">Hủy</button>
