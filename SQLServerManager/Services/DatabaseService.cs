@@ -34,8 +34,8 @@ namespace DatabaseSynchronizer.Services // Định nghĩa không gian tên cho d
                     using (var command = new SqlCommand(
                         @"SELECT name 
                           FROM sys.databases 
-                          WHERE database_id > 4 // Lọc các cơ sở dữ liệu hệ thống
-                          AND state = 0 // Chỉ lấy các cơ sở dữ liệu đang hoạt động
+                          WHERE database_id > 4 
+                          AND state = 0 
                           ORDER BY name", connection))
                     {
                         // Thực hiện truy vấn và đọc kết quả
