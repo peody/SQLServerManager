@@ -6,4 +6,4 @@
 ###Nguyễn Tuấn Dũng - D55.B10.AT.005
 ###Bùi Khắc Khởi - D55.B10.AT.018
 
-#Đang trong quán trình phát triển các phiên bản mới hoạt động ổn định hơn
+#Đang trong quá trình phát triển các phiên bản mới hoạt động ổn định hơn
