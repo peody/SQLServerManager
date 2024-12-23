@@ -7,8 +7,8 @@
     <marquee behavior="scroll" direction="left">
         
         <h8 style="font-size: 30px;
-        font-family: 'Verdana', sans-serif;font-weight: bold;
-">Welcome to our Project!</h8>
+        font-family: 'Verdana', sans-serif;font-weight: bold;font-style:italic;
+">Welcome to SQL server management!</h8>
     </marquee>
 
 
@@ -313,9 +313,7 @@
             transition: color 0.3s;
         }
 
-        .trainer-card:hover h3 {
-            color: #007BFF;
-        }
+        
 
     .social-icons {
         display: flex;
@@ -372,20 +370,12 @@
 <script>
     (function () {
         let currentSlideIndex = 0;
-
         const slider = document.querySelector('.slides');
         const totalSlides = document.querySelectorAll('.image-c').length;
 
         function displaySlide(index) {
             // Xử lý chỉ số slide
-            if (index >= totalSlides) {
-                currentSlideIndex = 0;
-            } else if (index < 0) {
-                currentSlideIndex = totalSlides - 1;
-            } else {
-                currentSlideIndex = index;
-            }
-
+            currentSlideIndex = (index + totalSlides) % totalSlides; // Sử dụng toán tử modulo để đảm bảo chỉ số hợp lệ
             // Cập nhật vị trí của slides
             slider.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
         }
@@ -395,20 +385,23 @@
         }
 
         // Tự động chuyển slide mỗi 3 giây
-        setInterval(() => {
+        const autoSlideInterval = setInterval(() => {
             changeSlide(1);
         }, 3000);
 
         // Gán sự kiện cho các nút trước và sau
-        document.querySelector('.prev').addEventListener('click', () => changeSlide(-1));
-        document.querySelector('.next').addEventListener('click', () => changeSlide(1));
+        const prevButton = document.querySelector('.prev');
+        const nextButton = document.querySelector('.next');
+
+        // Thêm sự kiện chỉ một lần cho các nút
+        prevButton.addEventListener('click', () => changeSlide(-1));
+        nextButton.addEventListener('click', () => changeSlide(1));
 
         // Hiển thị slide đầu tiên
         displaySlide(currentSlideIndex);
     })();
-
-
 </script>
+
 
 
 
