@@ -1,8 +1,10 @@
 ﻿using Microsoft.Data.SqlClient; // Thư viện để làm việc với SQL Server
 using SQLServerManager.Models; // Thư viện chứa các mô hình dữ liệu
 using System.Data; // Thư viện cho các loại dữ liệu
+using System.Collections.Generic; // Thư viện cho danh sách
+using System.Threading.Tasks; // Thư viện cho lập trình bất đồng bộ
 
-namespace SQLServerManager.Services
+namespace SQLServerManager.Services // Không gian tên cho dịch vụ quản lý SQL Server
 {
     // Lớp SqlServerService thực hiện các thao tác với SQL Server
     public class SqlServerService

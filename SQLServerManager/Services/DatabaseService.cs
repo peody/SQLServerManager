@@ -1,66 +1,71 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-namespace DatabaseSynchronizer.Services
-{
-    public class DatabaseService
-    {
-        private readonly string _connectionString;
+﻿using Microsoft.Data.SqlClient; // Thư viện để làm việc với SQL Server
+using Microsoft.Extensions.Configuration; // Thư viện để quản lý cấu hình
 
+namespace DatabaseSynchronizer.Services // Định nghĩa không gian tên cho dịch vụ
+{
+    public class DatabaseService // Lớp dịch vụ cơ sở dữ liệu
+    {
+        private readonly string _connectionString; // Biến lưu trữ chuỗi kết nối
+
+        // Constructor nhận vào IConfiguration để lấy chuỗi kết nối từ cấu hình
         public DatabaseService(IConfiguration configuration)
         {
+            // Lấy chuỗi kết nối từ cấu hình với tên "DefaultConnection"
             _connectionString = configuration
                 .GetConnectionString("DefaultConnection");
         }
 
+        // Phương thức để lấy danh sách các cơ sở dữ liệu
         public List<string> GetDatabases()
         {
-            var databases = new List<string>();
+            var databases = new List<string>(); // Danh sách để lưu tên các cơ sở dữ liệu
 
             try
             {
-                // Log connection string để kiểm tra
+                // Log chuỗi kết nối để kiểm tra
                 Console.WriteLine($"Connection String: {_connectionString}");
 
+                // Tạo kết nối đến cơ sở dữ liệu
                 using (var connection = new SqlConnection(_connectionString))
                 {
-                    connection.Open();
+                    connection.Open(); // Mở kết nối
 
-                    // Query chi tiết hơn
+                    // Thực hiện truy vấn để lấy tên các cơ sở dữ liệu
                     using (var command = new SqlCommand(
                         @"SELECT name 
-                  FROM sys.databases 
-                  WHERE database_id > 4 
-                  AND state = 0 
-                  ORDER BY name", connection))
+                          FROM sys.databases 
+                          WHERE database_id > 4 // Lọc các cơ sở dữ liệu hệ thống
+                          AND state = 0 // Chỉ lấy các cơ sở dữ liệu đang hoạt động
+                          ORDER BY name", connection))
                     {
+                        // Thực hiện truy vấn và đọc kết quả
                         using (var reader = command.ExecuteReader())
                         {
-                            while (reader.Read())
+                            while (reader.Read()) // Đọc từng dòng kết quả
                             {
-                                string dbName = reader["name"].ToString();
-                                databases.Add(dbName);
-                                Console.WriteLine($"Tìm thấy database: {dbName}");
+                                string dbName = reader["name"].ToString(); // Lấy tên cơ sở dữ liệu
+                                databases.Add(dbName); // Thêm tên vào danh sách
+                                Console.WriteLine($"Tìm thấy database: {dbName}"); // Log tên cơ sở dữ liệu
                             }
                         }
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) // Bắt lỗi nếu có
             {
-                // Log chi tiết lỗi
+                // Log chi tiết lỗi kết nối cơ sở dữ liệu
                 Console.WriteLine($"Lỗi chi tiết kết nối CSDL: {ex}");
                 throw; // Ném lại exception để xem chi tiết
             }
 
-            return databases;
+            return databases; // Trả về danh sách các cơ sở dữ liệu
         }
-        // Thêm phương thức lấy connection string cho database cụ thể
+
+        // Phương thức để lấy chuỗi kết nối cho một cơ sở dữ liệu cụ thể
         public string GetConnectionString(string databaseName)
         {
-            // Logic tạo connection string dựa trên database name
+            // Tạo chuỗi kết nối dựa trên tên cơ sở dữ liệu
             return $"Server=.;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
         }
-
     }
 }
-

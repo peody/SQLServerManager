@@ -1,31 +1,34 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Diagnostics;
-using System.Text;
+﻿using Microsoft.Data.SqlClient; // Thư viện để làm việc với SQL Server
+using SQLServerManager.Models;
+using System.Diagnostics; // Thư viện cho xử lý thông tin gỡ lỗi
+using System.Text; // Thư viện cho xử lý chuỗi
 
-namespace DatabaseSynchronizer.Services
+namespace DatabaseSynchronizer.Services // Không gian tên cho dịch vụ đồng bộ hóa cơ sở dữ liệu
 {
-    public class ModelGeneratorService
+    public class ModelGeneratorService // Lớp dịch vụ sinh model
     {
-        private readonly ILogger<ModelGeneratorService> _logger;
-        private readonly IConfiguration _configuration;
+        private readonly ILogger<ModelGeneratorService> _logger; // Logger để ghi lại thông tin
+        private readonly IConfiguration _configuration; // Cấu hình ứng dụng
 
+        // Constructor nhận vào logger và cấu hình
         public ModelGeneratorService(
             ILogger<ModelGeneratorService> logger,
             IConfiguration configuration)
         {
-            _logger = logger;
-            _configuration = configuration;
+            _logger = logger; // Khởi tạo logger
+            _configuration = configuration; // Khởi tạo cấu hình
         }
 
+        // Phương thức bất đồng bộ để sinh models
         public async Task<bool> GenerateModelsAsync(
-            string databaseName,
-            string projectPath,
-            string modelNamespace,
-            bool safeMode = false)
+            string databaseName, // Tên cơ sở dữ liệu
+            string projectPath, // Đường dẫn dự án
+            string modelNamespace, // Không gian tên cho các model
+            bool safeMode = false) // Chế độ an toàn
         {
             try
             {
-                // Validate inputs
+                // Kiểm tra các tham số đầu vào
                 if (string.IsNullOrEmpty(databaseName))
                     throw new ArgumentException("Database name cannot be empty");
 
@@ -33,12 +36,12 @@ namespace DatabaseSynchronizer.Services
                     throw new ArgumentException("Project path cannot be empty");
 
                 if (string.IsNullOrEmpty(modelNamespace))
-                    modelNamespace = $"{Path.GetFileName(projectPath)}.Models";
+                    modelNamespace = $"{Path.GetFileName(projectPath)}.Models"; // Thiết lập không gian tên mặc định
 
-                // Chuẩn bị connection string
+                // Chuẩn bị chuỗi kết nối
                 string connectionString = GetConnectionString(databaseName);
 
-                // Lấy thông tin các bảng
+                // Lấy thông tin các bảng từ cơ sở dữ liệu
                 var tables = await GetTablesAsync(connectionString);
 
                 // Tạo thư mục Models nếu chưa tồn tại
@@ -50,7 +53,7 @@ namespace DatabaseSynchronizer.Services
                     .Where(f => !f.EndsWith("GlobalUsings.cs"))
                     .ToList();
 
-                // Danh sách model names từ database
+                // Danh sách tên model từ database
                 var databaseTableNames = new HashSet<string>(
                     tables.Select(t => $"{t.Name}Model.cs")
                 );
@@ -69,12 +72,12 @@ namespace DatabaseSynchronizer.Services
 
                         try
                         {
-                            File.Delete(existingModelFile);
-                            _logger.LogInformation($"Deleted obsolete model file: {modelFileName}");
+                            File.Delete(existingModelFile); // Xóa file model cũ
+                            _logger.LogInformation($"Deleted obsolete model file: {modelFileName}"); // Ghi thông tin xóa file
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"Could not delete model file {modelFileName}");
+                            _logger.LogError(ex, $"Could not delete model file {modelFileName}"); // Ghi lỗi nếu không xóa được
                         }
                     }
                 }
@@ -82,35 +85,36 @@ namespace DatabaseSynchronizer.Services
                 // Sinh models cho từng bảng
                 foreach (var table in tables)
                 {
-                    string modelCode = GenerateModelCode(table, modelNamespace);
-                    string modelFileName = $"{table.Name}Model.cs";
-                    string modelFilePath = Path.Combine(modelsFolder, modelFileName);
+                    string modelCode = GenerateModelCode(table, modelNamespace); // Sinh mã model cho bảng
+                    string modelFileName = $"{table.Name}Model.cs"; // Tên file model
+                    string modelFilePath = Path.Combine(modelsFolder, modelFileName); // Đường dẫn file model
 
-                    await File.WriteAllTextAsync(modelFilePath, modelCode);
-                    _logger.LogInformation($"Generated/Updated model for {table.Name} at {modelFilePath}");
+                    await File.WriteAllTextAsync(modelFilePath, modelCode); // Ghi mã vào file
+                    _logger.LogInformation($"Generated/Updated model for {table.Name} at {modelFilePath}"); // Ghi thông tin thành công
                 }
 
                 // Sinh file index cho models 
-                await GenerateModelIndexAsync(modelsFolder, modelNamespace, tables);
+                await GenerateModelIndexAsync(modelsFolder, modelNamespace, tables); // Sinh file index
 
-                return true;
+                return true; // Trả về true nếu thành công
             }
-            catch (Exception ex)
+            catch (Exception ex) // Bắt lỗi nếu có
             {
-                _logger.LogError(ex, $"Model generation failed for database {databaseName}");
-                return false;
+                _logger.LogError(ex, $"Model generation failed for database {databaseName}"); // Ghi lỗi
+                return false; // Trả về false
             }
         }
 
+        // Phương thức để lấy thông tin các bảng
         private async Task<List<TableInfo>> GetTablesAsync(string connectionString)
         {
-            var tables = new List<TableInfo>();
+            var tables = new List<TableInfo>(); // Danh sách các bảng
 
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString)) // Tạo kết nối đến cơ sở dữ liệu
             {
-                await connection.OpenAsync();
+                await connection.OpenAsync(); // Mở kết nối
 
-                // Thay đổi query để lấy thông tin từ database được chọn
+                // Truy vấn để lấy thông tin bảng và cột
                 string query = @"
             USE [@DatabaseName];
             SELECT 
@@ -130,45 +134,45 @@ namespace DatabaseSynchronizer.Services
                 // Thay thế @DatabaseName bằng tên database thực tế
                 query = query.Replace("@DatabaseName", connection.Database);
 
-                using (var command = new SqlCommand(query, connection))
+                using (var command = new SqlCommand(query, connection)) // Tạo lệnh SQL
                 {
-                    using (var reader = await command.ExecuteReaderAsync())
+                    using (var reader = await command.ExecuteReaderAsync()) // Thực hiện truy vấn
                     {
-                        string currentTableName = null;
-                        TableInfo currentTable = null;
+                        string currentTableName = null; // Biến lưu tên bảng hiện tại
+                        TableInfo currentTable = null; // Biến lưu thông tin bảng hiện tại
 
-                        while (await reader.ReadAsync())
+                        while (await reader.ReadAsync()) // Đọc từng dòng kết quả
                         {
-                            string tableName = reader["TableName"].ToString();
+                            string tableName = reader["TableName"].ToString(); // Lấy tên bảng
 
                             // Nếu là bảng mới
                             if (currentTableName != tableName)
                             {
                                 if (currentTable != null)
                                 {
-                                    tables.Add(currentTable);
+                                    tables.Add(currentTable); // Thêm bảng cũ vào danh sách
                                 }
 
-                                currentTableName = tableName;
-                                currentTable = new TableInfo
+                                currentTableName = tableName; // Cập nhật tên bảng hiện tại
+                                currentTable = new TableInfo // Khởi tạo bảng mới
                                 {
                                     Name = tableName,
-                                    Columns = new List<ColumnInfo>()
+                                    Columns = new List<ColumnInfo>() // Danh sách cột
                                 };
                             }
 
-                            // Thêm cột
+                            // Thêm cột vào bảng
                             currentTable.Columns.Add(new ColumnInfo
                             {
-                                Name = reader["ColumnName"].ToString(),
-                                Type = MapSqlToDotNetType(
+                                Name = reader["ColumnName"].ToString(), // Lấy tên cột
+                                Type = MapSqlToDotNetType( // Lấy kiểu dữ liệu tương ứng
                                     reader["DataType"].ToString(),
                                     Convert.ToBoolean(reader["IsNullable"])
                                 )
                             });
                         }
 
-                        // Thêm bảng cuối cùng
+                        // Thêm bảng cuối cùng vào danh sách
                         if (currentTable != null)
                         {
                             tables.Add(currentTable);
@@ -177,87 +181,90 @@ namespace DatabaseSynchronizer.Services
                 }
             }
 
-            return tables;
+            return tables; // Trả về danh sách các bảng
         }
 
-        // Cập nhật phương thức GetConnectionString
+        // Phương thức lấy chuỗi kết nối
         private string GetConnectionString(string databaseName)
         {
-            // Lấy connection string gốc
+            // Lấy chuỗi kết nối gốc
             string baseConnectionString = _configuration.GetConnectionString("DefaultConnection")
                 ?? "Server=.;Trusted_Connection=True;TrustServerCertificate=True;";
 
             // Tách và thay thế Database
             var connectionStringBuilder = new SqlConnectionStringBuilder(baseConnectionString)
             {
-                InitialCatalog = databaseName
+                InitialCatalog = databaseName // Cập nhật tên cơ sở dữ liệu
             };
 
-            return connectionStringBuilder.ConnectionString;
+            return connectionStringBuilder.ConnectionString; // Trả về chuỗi kết nối
         }
 
+        // Phương thức sinh mã cho model
         private string GenerateModelCode(TableInfo table, string modelNamespace)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(); // StringBuilder để tạo mã
 
-            // Using statements
+            // Các using statements
             sb.AppendLine("using System;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations;");
             sb.AppendLine("using System.ComponentModel.DataAnnotations.Schema;");
             sb.AppendLine();
 
-            // Namespace
+            // Namespace cho model
             sb.AppendLine($"namespace {modelNamespace}");
             sb.AppendLine("{");
 
-            // Class declaration with table attribute
+            // Khai báo lớp với thuộc tính Table
             sb.AppendLine($"    [Table(\"{table.Name}\")]");
             sb.AppendLine($"    public class {table.Name}Model");
             sb.AppendLine("    {");
 
-            // Properties
+            // Properties cho các cột
             foreach (var column in table.Columns)
             {
-                // Thêm data annotations
+                // Thêm data annotations cho cột ID
                 if (column.Name.ToLower() == "id")
                 {
-                    sb.AppendLine("        [Key]");
-                    sb.AppendLine("        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
+                    sb.AppendLine("        [Key]"); // Đánh dấu cột là khóa chính
+                    sb.AppendLine("        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]"); // Tự động sinh giá trị
                 }
 
-                sb.AppendLine($"        [Column(\"{column.Name}\")]");
-                sb.AppendLine($"        public {column.Type} {column.Name} {{ get; set; }}");
+                sb.AppendLine($"        [Column(\"{column.Name}\")]"); // Đánh dấu cột
+                sb.AppendLine($"        public {column.Type} {column.Name} {{ get; set; }}"); // Khai báo thuộc tính
                 sb.AppendLine();
             }
 
             sb.AppendLine("    }");
             sb.AppendLine("}");
 
-            return sb.ToString();
+            return sb.ToString(); // Trả về mã model
         }
 
+        // Phương thức sinh file index cho models
         private async Task GenerateModelIndexAsync(
             string modelsFolder,
             string modelNamespace,
             List<TableInfo> tables)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(); // StringBuilder để tạo mã
 
             // Global using statements
             sb.AppendLine("global using System;");
             sb.AppendLine($"global using {modelNamespace};");
             sb.AppendLine();
 
-            // Namespace declaration
+            // Khai báo namespace
             sb.AppendLine($"namespace {modelNamespace};");
             sb.AppendLine("{");
             sb.AppendLine("    // Index of generated models");
             sb.AppendLine("}");
 
-            string indexFilePath = Path.Combine(modelsFolder, "GlobalUsings.cs");
-            await File.WriteAllTextAsync(indexFilePath, sb.ToString());
+            string indexFilePath = Path.Combine(modelsFolder, "GlobalUsings.cs"); // Đường dẫn file index
+            await File.WriteAllTextAsync(indexFilePath, sb.ToString()); // Ghi mã vào file
         }
 
+        // Phương thức ánh xạ kiểu SQL sang kiểu .NET
         private string MapSqlToDotNetType(string sqlType, bool isNullable)
         {
             string baseType = sqlType.ToLower() switch
@@ -280,8 +287,7 @@ namespace DatabaseSynchronizer.Services
                 "text" => "string",
                 "ntext" => "string",
                 "uniqueidentifier" => "Guid",
-                // Thêm các type còn thiếu
-                
+                // Thêm các kiểu còn thiếu
                 "money" => "decimal",
                 "smallmoney" => "decimal",
                 "binary" => "byte[]",
@@ -298,13 +304,10 @@ namespace DatabaseSynchronizer.Services
                 _ => "string"
             };
 
-            // Nếu là kiểu nullable và không phải string
-            return isNullable && baseType != "string"
-                ? $"{baseType}?"
-                : baseType;
+            // Nếu là kiểu nullable, thêm dấu hỏi
+            return isNullable ? $"{baseType}?" : baseType;
         }
     }
-
     // Các class hỗ trợ giữ nguyên như ở phiên bản trước
     public class TableInfo
     {
