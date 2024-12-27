@@ -4,13 +4,13 @@
 <div class="row">
     <div class="col-md-12">
         <RadzenTemplateForm TItem="DatabaseModel" Data=@model Submit=@OnSubmit>
-            <RadzenFormField Text="New Database Name" Variant="Variant.Outlined">
+            <RadzenFormField Text="Tên Mới" Variant="Variant.Outlined">
                 <RadzenTextBox @bind-Value=@model.NewName class="w-100" />
             </RadzenFormField>
             <div class="row mt-3">
                 <div class="col-md-12 text-right">
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Rename" ButtonStyle="ButtonStyle.Primary" />
-                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click=@OnCancel class="ms-1" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Đổi Tên" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton Text="Hủy" ButtonStyle="ButtonStyle.Light" Click=@OnCancel class="ms-1" />
                 </div>
             </div>
         </RadzenTemplateForm>

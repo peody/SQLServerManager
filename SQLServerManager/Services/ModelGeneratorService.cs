@@ -308,7 +308,7 @@ namespace DatabaseSynchronizer.Services // Không gian tên cho dịch vụ đ�
             return isNullable ? $"{baseType}?" : baseType;
         }
     }
-    // Các class hỗ trợ giữ nguyên như ở phiên bản trước
+    // Các class hỗ trợ 
     public class TableInfo
     {
         public string Name { get; set; }

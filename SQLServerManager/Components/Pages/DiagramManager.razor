@@ -10,7 +10,8 @@
     <label for="databaseSelect">Chọn Cơ Sở Dữ Liệu:</label>
 
     <select id="databaseSelect" class="form-control" @onchange="OnDatabaseChange">
-        
+        <option>vui long chon database</option>
+
         @foreach (var db in databases)
         {
             <option value="@db">@db</option>
@@ -96,30 +97,31 @@
     private bool isCreateDiagramModalVisible = false; // Hiển thị modal tạo sơ đồ
     private bool isTableDetailsVisible = false; // Hiển thị modal chi tiết bảng
     private string newDiagramName = string.Empty; // Tên sơ đồ mới
-    private List<ColumnInfo> tableColumns;
-    protected override async Task OnInitializedAsync()
+    private List<ColumnInfo> tableColumns; // Danh sách các cột của bảng
+
+    protected override async Task OnInitializedAsync() // Phương thức khởi tạo bất đồng bộ
     {
         try
         {
-            databases.Add("VUI LONG CHON DI DO NGU");
-            databases = await DatabaseService.GetDatabasesAsync();
-            
-            selectedDatabase = databases.FirstOrDefault();
+            databases.Add("VUI LONG CHON"); // Thêm chuỗi thông báo vào danh sách cơ sở dữ liệu
+            databases = await DatabaseService.GetDatabasesAsync(); // Lấy danh sách cơ sở dữ liệu từ dịch vụ
 
-            if (!string.IsNullOrEmpty(selectedDatabase))
+           // selectedDatabase = databases.FirstOrDefault(); // Chọn cơ sở dữ liệu đầu tiên trong danh sách
+
+            if (!string.IsNullOrEmpty(selectedDatabase)) // Kiểm tra nếu có cơ sở dữ liệu được chọn
             {
-                await LoadTablesAsync();
+                await LoadTablesAsync(); // Tải danh sách các bảng trong cơ sở dữ liệu
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi tải danh sách cơ sở dữ liệu: {ex.Message}");
+            Console.WriteLine($"Lỗi khi tải danh sách cơ sở dữ liệu: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender) // Phương thức xử lý sau khi giao diện được render
     {
-        if (firstRender)
+        if (firstRender) // Nếu là lần render đầu tiên
         {
             try
             {
@@ -129,37 +131,33 @@
                     return;
                 }
 
-                // Lấy danh sách các bảng từ backend
-                tables = await TableService.GetTablesAsync(selectedDatabase);
+                tables = await TableService.GetTablesAsync(selectedDatabase); // Lấy danh sách các bảng từ backend
                 Console.WriteLine($"Số lượng bảng: {tables.Count}");
 
-                // Lấy danh sách các quan hệ giữa các bảng
-                var connections = await GetTableConnections();
+                var connections = await GetTableConnections(); // Lấy danh sách các quan hệ giữa các bảng
                 Console.WriteLine($"Số lượng quan hệ: {connections.Count}");
 
-                // Gửi danh sách bảng và quan hệ sang JavaScript để hiển thị sơ đồ
-                await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections);
+                await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections); // Gửi danh sách bảng và quan hệ sang JavaScript để hiển thị sơ đồ
 
                 Console.WriteLine("Sơ đồ và quan hệ đã được hiển thị.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi khi khởi tạo sơ đồ: {ex.Message}");
+                Console.WriteLine($"Lỗi khi khởi tạo sơ đồ: {ex.Message}"); // Xử lý lỗi
             }
         }
     }
 
-    private async Task OnDatabaseChange(ChangeEventArgs e)
+    private async Task OnDatabaseChange(ChangeEventArgs e) // Phương thức xử lý khi thay đổi cơ sở dữ liệu
     {
-        selectedDatabase = e.Value.ToString();
+        selectedDatabase = e.Value.ToString(); // Lấy cơ sở dữ liệu mới được chọn
 
-        // Tải lại danh sách bảng khi chọn database khác
-        await LoadTablesAsync();
+        await LoadTablesAsync(); // Tải lại danh sách bảng khi chọn cơ sở dữ liệu khác
 
-        // Tải lại sơ đồ với dữ liệu mới
-        await ReloadDiagramAsync();
+        await ReloadDiagramAsync(); // Tải lại sơ đồ với dữ liệu mới
     }
-    private async Task ReloadDiagramAsync()
+
+    private async Task ReloadDiagramAsync() // Phương thức tải lại sơ đồ
     {
         try
         {
@@ -169,8 +167,7 @@
                 return;
             }
 
-            // Lấy danh sách các bảng từ backend
-            tables = await TableService.GetTablesAsync(selectedDatabase);
+            tables = await TableService.GetTablesAsync(selectedDatabase); // Lấy danh sách các bảng từ backend
 
             if (tables == null || !tables.Any())
             {
@@ -178,22 +175,19 @@
                 return;
             }
 
-            // Lấy danh sách các quan hệ giữa các bảng
-            var connections = await GetTableConnections();
+            var connections = await GetTableConnections(); // Lấy danh sách các quan hệ giữa các bảng
 
-            // Gửi danh sách bảng và quan hệ sang JavaScript để vẽ lại sơ đồ
-            await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections);
+            await JSRuntime.InvokeVoidAsync("diagramManager.updateDiagram", tables, connections); // Gửi danh sách bảng và quan hệ sang JavaScript để vẽ lại sơ đồ
 
             Console.WriteLine("Sơ đồ đã được tải lại.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi tải lại sơ đồ: {ex.Message}");
+            Console.WriteLine($"Lỗi khi tải lại sơ đồ: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-
-    private async Task LoadTablesAsync()
+    private async Task LoadTablesAsync() // Phương thức tải danh sách các bảng
     {
         if (string.IsNullOrEmpty(selectedDatabase))
         {
@@ -203,7 +197,7 @@
 
         try
         {
-            tables = await TableService.GetTablesAsync(selectedDatabase);
+            tables = await TableService.GetTablesAsync(selectedDatabase); // Lấy danh sách các bảng từ backend
             if (tables == null || !tables.Any())
             {
                 Console.WriteLine("Không có bảng nào trong cơ sở dữ liệu này.");
@@ -211,23 +205,22 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi tải danh sách bảng: {ex.Message}");
+            Console.WriteLine($"Lỗi khi tải danh sách bảng: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-
-    private void ShowCreateDiagramModal()
+    private void ShowCreateDiagramModal() // Phương thức hiển thị modal tạo sơ đồ
     {
         isCreateDiagramModalVisible = true;
     }
 
-    private void CloseCreateDiagramModal()
+    private void CloseCreateDiagramModal() // Phương thức đóng modal tạo sơ đồ
     {
         isCreateDiagramModalVisible = false;
         newDiagramName = string.Empty;
     }
 
-    private async Task CreateDiagram()
+    private async Task CreateDiagram() // Phương thức tạo sơ đồ mới
     {
         if (string.IsNullOrWhiteSpace(newDiagramName))
         {
@@ -237,39 +230,29 @@
 
         try
         {
-            // Gọi JavaScript để tạo sơ đồ mới
-            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", newDiagramName);
-
+            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", newDiagramName); // Gọi JavaScript để tạo sơ đồ mới
             Console.WriteLine($"Sơ đồ mới được tạo: {newDiagramName}");
 
-            // Đóng modal sau khi tạo sơ đồ
-            CloseCreateDiagramModal();
+            CloseCreateDiagramModal(); // Đóng modal sau khi tạo sơ đồ
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi tạo sơ đồ: {ex.Message}");
+            Console.WriteLine($"Lỗi khi tạo sơ đồ: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-
-    private async Task ShowTableDetails(TableInfo table)
+    private async Task ShowTableDetails(TableInfo table) // Phương thức hiển thị chi tiết bảng
     {
-        tableColumns = await TableService.GetColumnsAsync(
-                    selectedDatabase,
-                    table.Schema,
-                    table.Name
-                );
-
-
+        tableColumns = await TableService.GetColumnsAsync(selectedDatabase, table.Schema, table.Name); // Lấy danh sách cột của bảng hiện tại
         isTableDetailsVisible = true;
     }
 
-    private void CloseTableDetails()
+    private void CloseTableDetails() // Phương thức đóng modal chi tiết bảng
     {
         isTableDetailsVisible = false;
     }
 
-    private async Task OnDragStart(DragEventArgs e, string tableName)
+    private async Task OnDragStart(DragEventArgs e, string tableName) // Phương thức xử lý khi kéo bảng vào sơ đồ
     {
         if (string.IsNullOrEmpty(tableName))
         {
@@ -279,70 +262,62 @@
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", tableName);
+            await JSRuntime.InvokeVoidAsync("diagramManager.addTable", tableName); // Thêm bảng vào sơ đồ
 
-            // Lấy lại danh sách quan hệ (sau khi thêm bảng)
-            var connections = await GetTableConnections();
+            var connections = await GetTableConnections(); // Lấy lại danh sách quan hệ sau khi thêm bảng
 
-            // Cập nhật quan hệ trên sơ đồ
-            await JSRuntime.InvokeVoidAsync("diagramManager.drawConnections", connections);
+            await JSRuntime.InvokeVoidAsync("diagramManager.drawConnections", connections); // Cập nhật quan hệ trên sơ đồ
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi kéo bảng vào sơ đồ: {ex.Message}");
+            Console.WriteLine($"Lỗi khi kéo bảng vào sơ đồ: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-
-
-    private async Task SaveDiagram()
+    private async Task SaveDiagram() // Phương thức lưu sơ đồ
     {
         try
         {
-            var diagramData = await JSRuntime.InvokeAsync<DiagramData>("diagramManager.getDiagramData");
+            var diagramData = await JSRuntime.InvokeAsync<DiagramData>("diagramManager.getDiagramData"); // Lấy dữ liệu sơ đồ từ JavaScript
             Console.WriteLine($"Lưu sơ đồ: {diagramData}");
             // Lưu sơ đồ vào cơ sở dữ liệu
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi lưu sơ đồ: {ex.Message}");
+            Console.WriteLine($"Lỗi khi lưu sơ đồ: {ex.Message}"); // Xử lý lỗi
         }
     }
 
-    private async Task ExportDiagramAsImage()
+    private async Task ExportDiagramAsImage() // Phương thức xuất sơ đồ thành ảnh
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("diagramManager.exportAsImage");
+            await JSRuntime.InvokeVoidAsync("diagramManager.exportAsImage"); // Gọi JavaScript để xuất sơ đồ
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi xuất sơ đồ: {ex.Message}");
+            Console.WriteLine($"Lỗi khi xuất sơ đồ: {ex.Message}"); // Xử lý lỗi
         }
     }
-    private async Task <List<TableConnection>> GetTableConnections()
+
+    private async Task<List<TableConnection>> GetTableConnections() // Phương thức lấy danh sách quan hệ giữa các bảng
     {
         var connections = new List<TableConnection>();
 
         foreach (var table in tables)
         {
-            // Lấy danh sách cột của bảng hiện tại
-            var columns = await TableService.GetColumnsAsync(
-                    selectedDatabase,
-                    table.Schema,
-                    table.Name
-                );
+            var columns = await TableService.GetColumnsAsync(selectedDatabase, table.Schema, table.Name); // Lấy danh sách cột của bảng hiện tại
 
             foreach (var column in columns)
             {
                 if (column.IsForeignKey && !string.IsNullOrEmpty(column.ForeignKeyTable))
                 {
                     connections.Add(new TableConnection
-                        {
-                            SourceTable = table.Name,
-                            TargetTable = column.ForeignKeyTable,
-                            ForeignKeyColumn = column.Name
-                        });
+                    {
+                        SourceTable = table.Name, // Tên bảng nguồn
+                        TargetTable = column.ForeignKeyTable, // Tên bảng đích (bảng liên kết)
+                        ForeignKeyColumn = column.Name // Tên cột khóa ngoại
+                    });
                 }
             }
         }
@@ -350,35 +325,38 @@
         return connections;
     }
 
-    public class DiagramData
+    public class DiagramData // Lớp chứa dữ liệu sơ đồ
     {
-        public List<ElementData> Elements { get; set; } = new();
-        public List<ConnectionData> Connections { get; set; } = new();
+        public List<ElementData> Elements { get; set; } = new(); // Danh sách các phần tử trong sơ đồ
+        public List<ConnectionData> Connections { get; set; } = new(); // Danh sách các kết nối trong sơ đồ
     }
 
-    public class ElementData
+    public class ElementData // Lớp chứa thông tin phần tử trong sơ đồ
     {
-        public string Id { get; set; }
-        public Position Position { get; set; }
+        public string Id { get; set; } // ID của phần tử
+        public Position Position { get; set; } // Vị trí của phần tử
     }
 
-    public class ConnectionData
+
+        public class ConnectionData
+        {
+            public string Source { get; set; }
+            public string Target { get; set; }
+        }
+
+        public class Position // Lớp chứa thông tin vị trí của phần tử trong sơ đồ
     {
-        public string Source { get; set; }
-        public string Target { get; set; }
+        public int Top { get; set; } // Vị trí trên (theo trục Y)
+        public int Left { get; set; } // Vị trí trái (theo trục X)
     }
 
-    public class Position
-    {
-        public int Top { get; set; }
-        public int Left { get; set; }
-    }
-    public class TableConnection
+    public class TableConnection // Lớp chứa thông tin kết nối giữa các bảng
     {
         public string SourceTable { get; set; } // Tên bảng nguồn
         public string TargetTable { get; set; } // Tên bảng đích (bảng liên kết)
         public string ForeignKeyColumn { get; set; } // Tên cột khóa ngoại
     }
+
 
 }
 

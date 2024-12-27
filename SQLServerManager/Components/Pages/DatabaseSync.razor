@@ -2,7 +2,6 @@
 @using DatabaseSynchronizer.Services
 @inject DatabaseService DatabaseService
 @inject ModelGeneratorService ModelGeneratorService
-@inject IWebHostEnvironment WebHostEnvironment
 @inject IConfiguration Configuration
 @inject DbContextGenerationService DbContextGenerationService
 @using System.Runtime.InteropServices
@@ -11,13 +10,15 @@
 <PageTitle>Database Synchronizer</PageTitle>
 
 <div class="container" style="width : 600px;">
-    <h3>Database Synchronization</h3>
+    <h3>Đồng Bộ Cấu Trúc Chủ Động</h3>
 
     <div class="row">
         <div class="col">
             <label>Chọn Database:</label>
+            
             <select class="form-control"
                     @bind="SelectedDatabase">
+                    <option>vui long chon database</option>
                 @foreach (var db in Databases)
                 {
                     <option value="@db">@db</option>
@@ -67,13 +68,7 @@
 
     
 
-    @if (!string.IsNullOrEmpty(StatusMessage))
-    {
-        <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-3">
-            @StatusMessage
-        </div>
-        
-    }
+  
     <div>
         <div>
             <div class="form-check">
@@ -87,7 +82,13 @@
             </div>
         </div>
     </div>
+    @if (!string.IsNullOrEmpty(StatusMessage))
+    {
+        <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-3">
+            @StatusMessage
+        </div>
 
+    }
     <div>
         <button class="btn btn-primary"
                 @onclick="GenerateModelsAndContext"
@@ -113,11 +114,11 @@
     {
         try
         {
-            Databases = DatabaseService.GetDatabases();
-            if (Databases.Any())
-            {
-                SelectedDatabase = Databases.First();
-            }
+             Databases = DatabaseService.GetDatabases();
+            // if (Databases.Any())
+            // {
+            //     SelectedDatabase = Databases.First();
+            // }
 
            
         }
@@ -129,89 +130,93 @@
     }
     private async Task BrowseProjectPath()
     {
+        // Hiển thị hộp thoại prompt để người dùng nhập đường dẫn thư mục dự án
         var selectedPath = await JSRuntime.InvokeAsync<string>(
-            "prompt",
-            "Nhập đường dẫn thư mục dự án:"
+            "prompt", // Tên hàm JavaScript được gọi
+            "Nhập đường dẫn thư mục dự án:" // Thông điệp hiển thị trong hộp thoại
         );
 
-        if (!string.IsNullOrEmpty(selectedPath) &&
-            Directory.Exists(selectedPath))
+        // Kiểm tra nếu đường dẫn không rỗng và thư mục tồn tại
+        if (!string.IsNullOrEmpty(selectedPath) && Directory.Exists(selectedPath))
         {
-            ProjectPath = selectedPath;
-            StateHasChanged();
+            ProjectPath = selectedPath; // Lưu đường dẫn vào biến ProjectPath
+            StateHasChanged(); // Cập nhật trạng thái UI
         }
         else
         {
-            StatusMessage = "Đường dẫn không hợp lệ";
-            IsSuccess = false;
+            StatusMessage = "Đường dẫn không hợp lệ"; // Thông báo lỗi nếu đường dẫn không hợp lệ
+            IsSuccess = false; // Đánh dấu trạng thái không thành công
         }
     }
-
     private async Task GenerateModelsAndContext()
     {
+        // Kiểm tra nếu không có cơ sở dữ liệu được chọn
         if (string.IsNullOrEmpty(SelectedDatabase))
         {
-            StatusMessage = "Vui lòng chọn database";
-            IsSuccess = false;
-            return;
+            StatusMessage = "Vui lòng chọn database"; // Thông báo lỗi
+            IsSuccess = false; // Đánh dấu trạng thái không thành công
+            return; // Kết thúc phương thức
         }
 
+        // Kiểm tra nếu không có đường dẫn dự án được chọn
         if (string.IsNullOrEmpty(ProjectPath))
         {
-            StatusMessage = "Vui lòng chọn đường dẫn dự án";
-            IsSuccess = false;
-            return;
+            StatusMessage = "Vui lòng chọn đường dẫn dự án"; // Thông báo lỗi
+            IsSuccess = false; // Đánh dấu trạng thái không thành công
+            return; // Kết thúc phương thức
         }
 
-        IsProcessing = true;
-        StatusMessage = "";
+        IsProcessing = true; // Đánh dấu đang xử lý
+        StatusMessage = ""; // Đặt thông báo trạng thái về rỗng
 
         try
         {
-            // Sinh Models
+            // Sinh các model
             bool modelResult = await ModelGeneratorService.GenerateModelsAsync(
-                SelectedDatabase,
-                ProjectPath,
-                ModelNamespace,
-                SafeMode);
+                SelectedDatabase, // Cơ sở dữ liệu đã chọn
+                ProjectPath, // Đường dẫn dự án
+                ModelNamespace, // Namespace cho model
+                SafeMode); // Chế độ an toàn
 
+            // Kiểm tra kết quả sinh model
             if (!modelResult)
             {
-                StatusMessage = "Sinh model thất bại";
-                IsSuccess = false;
-                return;
+                StatusMessage = "Sinh model thất bại"; // Thông báo lỗi
+                IsSuccess = false; // Đánh dấu trạng thái không thành công
+                return; // Kết thúc phương thức
             }
 
             // Sinh DbContext (nếu được chọn)
-            bool contextResult = true;
-            if (GenerateDbContext)
+            bool contextResult = true; // Khởi tạo biến kết quả cho DbContext
+            if (GenerateDbContext) // Kiểm tra nếu cần sinh DbContext
             {
                 contextResult = await DbContextGenerationService.GenerateDbContextAsync(
-                    SelectedDatabase,
-                    ProjectPath,
+                    SelectedDatabase, // Cơ sở dữ liệu đã chọn
+                    ProjectPath, // Đường dẫn dự án
                     ModelNamespace.Replace(".Models", ""), // Điều chỉnh namespace
-                    SafeMode);
+                    SafeMode); // Chế độ an toàn
             }
 
             // Xác định trạng thái kết quả
             StatusMessage = GenerateDbContext
                 ? (contextResult
-                    ? "Sinh model và DbContext thành công"
-                    : "Sinh model thành công, nhưng DbContext thất bại")
-                : "Sinh model thành công";
+                    ? "Sinh model và DbContext thành công" // Thông báo thành công
+                    : "Sinh model thành công, nhưng DbContext thất bại") // Thông báo một phần thành công
+                : "Sinh model thành công"; // Thông báo chỉ sinh model thành công
 
-            IsSuccess = GenerateDbContext ? contextResult : true;
+            IsSuccess = GenerateDbContext ? contextResult : true; // Đánh dấu trạng thái thành công dựa trên kết quả
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Lỗi: {ex.Message}";
-            IsSuccess = false;
+            StatusMessage = $"Lỗi: {ex.Message}"; // Thông báo lỗi nếu có ngoại lệ
+            IsSuccess = false; // Đánh dấu trạng thái không thành công
         }
         finally
         {
-            IsProcessing = false;
-            StateHasChanged();
+            IsProcessing = false; // Đánh dấu không còn đang xử lý
+            StateHasChanged(); // Cập nhật trạng thái UI
         }
     }
+
 
 }

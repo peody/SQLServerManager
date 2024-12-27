@@ -5871,10 +5871,11 @@ a.close.disabled {
 }
 
 .modal-body {
-  position: relative;
-  -ms-flex: 1 1 auto;
-  flex: 1 1 auto;
-  padding: 1rem;
+    position: relative;
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: 1rem;
+    padding-right: 2.5rem;
 }
 
 .modal-footer {

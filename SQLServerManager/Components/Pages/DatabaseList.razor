@@ -5,8 +5,8 @@
 @inject DialogService DialogService
 <PageTitle>Databases</PageTitle> 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>SQL Server Databases</h3> 
-    <RadzenButton Text="Create New Database"
+    <h3>Danh Sách Cơ Sở Dữ Liệu</h3> 
+    <RadzenButton Text="Tạo cơ sở dữ liệu mới"
                   Icon="add"
                   ButtonStyle="ButtonStyle.Primary"
                   Click=@OpenCreateDialog /> 
@@ -18,22 +18,24 @@
 }
 else
 {
-    <RadzenDataGrid Data="@databases" TItem="Database" AllowPaging="true" PageSize="5"> 
+    <RadzenDataGrid Data="@databases" TItem="Database" AllowPaging="true" PageSize="8"> 
         <Columns>
-            <RadzenDataGridColumn TItem="Database" Property="Name" Title="Name" Width="300px" /> 
-            <RadzenDataGridColumn TItem="Database" Property="CreateDate" Title="Created" Width="350px" /> 
-            <RadzenDataGridColumn TItem="Database" Property="SizeMB" Title="Size (MB)" Width="80px" /> 
-            <RadzenDataGridColumn TItem="Database" Property="State" Title="State" Width="100px" /> 
-            <RadzenDataGridColumn TItem="Database" Title="Actions" TextAlign="TextAlign.Center">
+            <RadzenDataGridColumn TItem="Database" Property="Name" Title="Tên" Width="300px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="CreateDate" Title="Ngày Tạo" Width="250px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="SizeMB" Title="Kích Cỡ (MB)" Width="120px" /> 
+            <RadzenDataGridColumn TItem="Database" Property="State" Title="Trạng Thái" Width="100px" /> 
+            <RadzenDataGridColumn TItem="Database" Title="Hành Động" TextAlign="TextAlign.Center"Width="100px">
                 <!--// Cột hành động-->
                 <Template Context="data">
                     <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Light" Class="mx-1"
                                   Click=@(() => OpenDatabaseDetails(data.Name)) 
-                                  Title="View Details" />
+                                  Title="Chi Tiết" />
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="mx-1"
-                                  Click=@(() => OpenRenameDialog(data.Name)) /> 
+                                  Click=@(() => OpenRenameDialog(data.Name)) 
+                                  Title="Sửa"/> 
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Class="mx-1"
-                                  Click=@(() => DeleteDatabase(data.Name)) /> 
+                                  Click=@(() => DeleteDatabase(data.Name))
+                                  Title="Xóa"/> 
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -62,7 +64,7 @@ else
 
     private async Task OpenCreateDialog() // Phương thức mở dialog tạo cơ sở dữ liệu
     {
-        var result = await DialogService.OpenAsync<CreateDatabaseDialog>("Create Database",
+        var result = await DialogService.OpenAsync<CreateDatabaseDialog>("Tạo Cơ Sở Dữ Liệu",
             new Dictionary<string, object>(),
             new DialogOptions
                 {
@@ -89,7 +91,7 @@ else
             })}
         };
 
-        await DialogService.OpenAsync<RenameDatabaseDialog>("Rename Database", parameters,
+        await DialogService.OpenAsync<RenameDatabaseDialog>("Đổi Tên Cơ Sở Dữ Liệu", parameters,
             new DialogOptions
                 {
                     CloseDialogOnEsc = true,
@@ -128,7 +130,7 @@ else
                 { "DatabaseName", databaseName } // Truyền tên cơ sở dữ liệu
             };
 
-            var result = await DialogService.OpenAsync<DatabaseDetailsDialog>("Database Details",
+            var result = await DialogService.OpenAsync<DatabaseDetailsDialog>("Chi Tiết Cơ Sở Dữ Liệu",
                 parameters,
                 new DialogOptions
                     {

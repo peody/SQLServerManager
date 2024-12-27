@@ -9,6 +9,8 @@
     <div class="col-2">
         <label for="databaseSelect">Chọn Cơ Sở Dữ Liệu:</label>
         <select class="form-control" @bind="selectedDatabase">
+            <option>vui long chon database</option>
+
             @foreach (var db in databases)
             {
                 <option value="@db">@db</option>
@@ -151,10 +153,10 @@
         try
         {
             databases = DatabaseService.GetDatabases();
-            if (databases.Any())
-            {
-                selectedDatabase = databases.First();
-            }
+            // if (databases.Any())
+            // {
+            //     selectedDatabase = databases.First();
+            // }
         }
         catch (Exception ex)
         {
@@ -163,169 +165,189 @@
         }
     }
 
-    private async Task LoadSequences()
+
+    private async Task LoadSequences() // Phương thức bất đồng bộ để tải danh sách các sequence
     {
         try
         {
-            if (!string.IsNullOrEmpty(selectedDatabase))
+            if (!string.IsNullOrEmpty(selectedDatabase)) // Kiểm tra nếu có cơ sở dữ liệu được chọn
             {
-                var serviceSequences = await SequenceService.GetSequencesAsync(selectedDatabase);
-                sequences = serviceSequences.Select(seq => new Sequence
+                var serviceSequences = await SequenceService.GetSequencesAsync(selectedDatabase); // Lấy danh sách các sequence từ dịch vụ
+                sequences = serviceSequences.Select(seq => new Sequence // Ngôn ngữ LINQ để chuyển đổi danh sách sequence thành đối tượng Sequence
                     {
-                        Name = seq.Name,
-                        StartValue = seq.StartValue,
-                        IncrementValue = seq.IncrementValue
+                        Name = seq.Name, // Tên sequence
+                        StartValue = seq.StartValue, // Giá trị bắt đầu của sequence
+                        IncrementValue = seq.IncrementValue // Giá trị tăng của sequence
                     }).ToList();
 
                 // Ghi log danh sách sequences mới
                 Console.WriteLine("Danh sách sequences mới:");
-                foreach (var seq in sequences)
+                foreach (var seq in sequences) // Duyệt qua từng sequence trong danh sách
                 {
-                    Console.WriteLine($"Tên: {seq.Name}, Bắt đầu: {seq.StartValue}, Tăng: {seq.IncrementValue}");
+                    Console.WriteLine($"Tên: {seq.Name}, Bắt đầu: {seq.StartValue}, Tăng: {seq.IncrementValue}"); // Ghi log thông tin của từng sequence
                 }
 
-                await GetCurrentValue();
+                await GetCurrentValue(); // Lấy giá trị hiện tại của sequence
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) // Bắt lỗi nếu có ngoại lệ xảy ra
         {
-            StatusMessage = $"Lỗi khi tải sequences: {ex.Message}";
-            IsSuccess = false;
+            StatusMessage = $"Lỗi khi tải sequences: {ex.Message}"; // Ghi thông báo lỗi vào StatusMessage
+            IsSuccess = false; // Đặt IsSuccess thành false
         }
     }
-
-
-    string username = Environment.UserName; // Lấy tên người dùng hiện tại
-    string domainAndUsername = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-
-    private async Task SaveSequence()
+    private async Task SaveSequence() // Phương thức bất đồng bộ để lưu hoặc tạo sequence mới
     {
-        if (!string.IsNullOrWhiteSpace(newSequenceName))
+        if (!string.IsNullOrWhiteSpace(newSequenceName)) // Kiểm tra nếu tên sequence mới không rỗng hoặc chỉ chứa khoảng trắng
         {
             try
             {
-                if (isEditing)
+                if (isEditing) // Kiểm tra nếu đang trong chế độ chỉnh sửa sequence
                 {
-                    await SequenceService.ReplaceSequenceAsync(selectedDatabase, sequences.First(seq => seq.Name == newSequenceName).Name, newSequenceName, startValue, incrementValue);
+                    await SequenceService.ReplaceSequenceAsync(
+                        selectedDatabase,
+                        sequences.First(seq => seq.Name == newSequenceName).Name, // Tìm sequence cũ theo tên
+                        newSequenceName,
+                        startValue,
+                        incrementValue
+                    );
                     Console.WriteLine($"Đã cập nhật sequence: {newSequenceName} với Bắt đầu: {startValue}, Tăng: {incrementValue}");
                     StatusMessage = "Cập nhật sequence thành công!";
                 }
-
-                else
+                else // Nếu không phải chế độ chỉnh sửa, thì tạo sequence mới
                 {
-                    await SequenceService.CreateSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
+                    await SequenceService.CreateSequenceAsync(
+                        selectedDatabase,
+                        newSequenceName,
+                        startValue,
+                        incrementValue
+                    );
                     StatusMessage = "Tạo sequence thành công!";
                 }
                 IsSuccess = true;
 
                 // Tải lại danh sách sequences
                 await LoadSequences();
-                ResetForm();
+                ResetForm(); // Đặt lại form sau khi lưu sequence
             }
-            catch (Exception ex)
+            catch (Exception ex) // Bắt lỗi nếu có ngoại lệ xảy ra
             {
-                StatusMessage = $"Lỗi khi lưu sequence: {ex.Message}";
-                IsSuccess = false;
+                StatusMessage = $"Lỗi khi lưu sequence: {ex.Message}"; // Ghi thông báo lỗi vào StatusMessage
+                IsSuccess = false; // Đặt IsSuccess thành false
             }
         }
     }
 
-    private async Task DropSequence(Sequence sequence)
+
+    private async Task DropSequence(Sequence sequence) // Phương thức bất đồng bộ để xóa sequence
     {
-        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Bạn có chắc chắn muốn xóa sequence '{sequence.Name}'?");
-        if (confirm)
+        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Bạn có chắc chắn muốn xóa sequence '{sequence.Name}'?"); // Hiển thị hộp thoại xác nhận xóa sequence
+        if (confirm) // Nếu người dùng xác nhận
         {
             try
             {
-                await SequenceService.DropSequenceAsync(selectedDatabase, sequence.Name);
-                await LoadSequences();
+                await SequenceService.DropSequenceAsync(selectedDatabase, sequence.Name); // Xóa sequence từ dịch vụ
+                await LoadSequences(); // Tải lại danh sách sequences sau khi xóa
             }
-            catch (Exception ex)
+            catch (Exception ex) // Bắt lỗi nếu có ngoại lệ xảy ra
             {
-                StatusMessage = $"Lỗi khi xóa sequence: {ex.Message}";
-                IsSuccess = false;
+                StatusMessage = $"Lỗi khi xóa sequence: {ex.Message}"; // Ghi thông báo lỗi vào StatusMessage
+                IsSuccess = false; // Đặt IsSuccess thành false
             }
         }
     }
 
-    private void EditSequence(Sequence sequence)
+
+    private void EditSequence(Sequence sequence) // Phương thức để chỉnh sửa sequence
     {
-        if (sequence != null)
+        if (sequence != null) // Kiểm tra nếu sequence không rỗng
         {
-            selectedSequence = new Sequence
+            selectedSequence = new Sequence // Tạo đối tượng Sequence mới từ sequence được truyền vào
                 {
-                    Name = sequence.Name,
-                    StartValue = sequence.StartValue,
-                    IncrementValue = sequence.IncrementValue
+                    Name = sequence.Name, // Sao chép tên sequence
+                    StartValue = sequence.StartValue, // Sao chép giá trị bắt đầu của sequence
+                    IncrementValue = sequence.IncrementValue // Sao chép giá trị tăng của sequence
                 };
-            isEditingSequence = true;
+            isEditingSequence = true; // Đặt cờ cho biết đang chỉnh sửa sequence
         }
     }
 
 
 
-    private void ResetForm()
+    private void ResetForm() // Phương thức đặt lại form nhập liệu
     {
-        newSequenceName = string.Empty;
-        startValue = 0;
-        incrementValue = 0;
+        newSequenceName = string.Empty; // Đặt lại tên sequence mới về chuỗi rỗng
+        startValue = 0; // Đặt lại giá trị bắt đầu về 0
+        incrementValue = 0; // Đặt lại giá trị tăng về 0
     }
 
-    private async Task GetCurrentValue()
+    private async Task GetCurrentValue() // Phương thức bất đồng bộ để lấy giá trị hiện tại của sequence
     {
-        if (sequences.Count > 0)
+        if (sequences.Count > 0) // Kiểm tra nếu danh sách sequences không rỗng
         {
-            currentValue = await SequenceService.GetCurrentValueAsync(selectedDatabase, sequences[0].Name);
+            currentValue = await SequenceService.GetCurrentValueAsync(selectedDatabase, sequences[0].Name); // Lấy giá trị hiện tại của sequence đầu tiên trong danh sách từ dịch vụ
         }
     }
 
-    public class Sequence
+    public class Sequence // Định nghĩa lớp Sequence
     {
-        public string Name { get; set; }
-        public long StartValue { get; set; }
-        public long IncrementValue { get; set; }
+        public string Name { get; set; } // Tên sequence
+        public long StartValue { get; set; } // Giá trị bắt đầu của sequence
+        public long IncrementValue { get; set; } // Giá trị tăng của sequence
     }
-    private async Task UpdateSequence()
-    {
-        if (selectedSequence != null)
-        {
-            try
-            {
-                await SequenceService.ReplaceSequenceAsync(selectedDatabase, selectedSequence.Name, selectedSequence.Name, selectedSequence.StartValue, selectedSequence.IncrementValue);
-                StatusMessage = "Cập nhật sequence thành công!";
-                IsSuccess = true;
 
-                // Tải lại danh sách sequences
-                await LoadSequences();
-                selectedSequence = null;
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Lỗi khi cập nhật sequence: {ex.Message}";
-                IsSuccess = false;
-            }
-        }
-        isEditingSequence = false;
-    }
-    private async Task CreateSequence()
+    private async Task UpdateSequence() // Phương thức bất đồng bộ để cập nhật sequence
     {
-        if (!string.IsNullOrWhiteSpace(newSequenceName))
+        if (selectedSequence != null) // Kiểm tra nếu sequence được chọn không rỗng
         {
             try
             {
-                await SequenceService.CreateSequenceAsync(selectedDatabase, newSequenceName, startValue, incrementValue);
-                StatusMessage = "Tạo sequence thành công!";
-                IsSuccess = true;
+                await SequenceService.ReplaceSequenceAsync(
+                    selectedDatabase,
+                    selectedSequence.Name, // Tên sequence cũ
+                    selectedSequence.Name, // Tên sequence mới (trong trường hợp này không đổi)
+                    selectedSequence.StartValue, // Giá trị bắt đầu mới của sequence
+                    selectedSequence.IncrementValue // Giá trị tăng mới của sequence
+                );
+                StatusMessage = "Cập nhật sequence thành công!"; // Thông báo trạng thái thành công
+                IsSuccess = true; // Đặt cờ thành công
 
-                // T
-                await LoadSequences();
-                ResetForm();
+                await LoadSequences(); // Tải lại danh sách sequences
+                selectedSequence = null; // Đặt lại sequence được chọn về null
             }
-            catch (Exception ex)
+            catch (Exception ex) // Bắt lỗi nếu có ngoại lệ xảy ra
             {
-                StatusMessage = $"Lỗi khi tạo sequence: {ex.Message}";
-                IsSuccess = false;
+                StatusMessage = $"Lỗi khi cập nhật sequence: {ex.Message}"; // Ghi thông báo lỗi vào StatusMessage
+                IsSuccess = false; // Đặt cờ thất bại
+            }
+        }
+        isEditingSequence = false; // Đặt cờ đang chỉnh sửa sequence về false
+    }
+
+    private async Task CreateSequence() // Phương thức bất đồng bộ để tạo sequence mới
+    {
+        if (!string.IsNullOrWhiteSpace(newSequenceName)) // Kiểm tra nếu tên sequence mới không rỗng hoặc chỉ chứa khoảng trắng
+        {
+            try
+            {
+                await SequenceService.CreateSequenceAsync(
+                    selectedDatabase,
+                    newSequenceName, // Tên sequence mới
+                    startValue, // Giá trị bắt đầu của sequence
+                    incrementValue // Giá trị tăng của sequence
+                );
+                StatusMessage = "Tạo sequence thành công!"; // Thông báo trạng thái thành công
+                IsSuccess = true; // Đặt cờ thành công
+
+                await LoadSequences(); // Tải lại danh sách sequences
+                ResetForm(); // Đặt lại form sau khi tạo sequence
+            }
+            catch (Exception ex) // Bắt lỗi nếu có ngoại lệ xảy ra
+            {
+                StatusMessage = $"Lỗi khi tạo sequence: {ex.Message}"; // Ghi thông báo lỗi vào StatusMessage
+                IsSuccess = false; // Đặt cờ thất bại
             }
         }
     }
+
 }

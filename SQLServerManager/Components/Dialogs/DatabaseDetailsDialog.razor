@@ -20,26 +20,26 @@
 
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <RadzenText TextStyle="TextStyle.Subtitle2">Basic Information</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Subtitle2">Thông Tin Cơ Bản</RadzenText>
                     <RadzenStack Gap="1rem" Class="mt-2">
                         <div>
-                            <RadzenText TextStyle="TextStyle.Body2">Owner</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Máy Chủ</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">@_details.Owner</RadzenText>
                         </div>
                         <div>
-                            <RadzenText TextStyle="TextStyle.Body2">Created Date</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Ngày Tạo</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">@_details.CreateDate.ToString("g")</RadzenText>
                         </div>
                         <div>
-                            <RadzenText TextStyle="TextStyle.Body2">Recovery Model</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Chế Độ Phục Hồi</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">@_details.RecoveryModel</RadzenText>
                         </div>
                         <div>
-                            <RadzenText TextStyle="TextStyle.Body2">State</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Trạng Thái</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">@_details.State</RadzenText>
                         </div>
                         <div>
-                            <RadzenText TextStyle="TextStyle.Body2">Total Size</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2">Tổng Kích Thước</RadzenText>
                             <RadzenText TextStyle="TextStyle.Body1">@_details.SizeInMB MB</RadzenText>
                         </div>
                     </RadzenStack>
@@ -48,15 +48,19 @@
 
             <div class="row">
                 <div class="col-md-12">
-                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="mb-3">Database Files</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="mb-3">Tập Tin</RadzenText>
                     <RadzenDataGrid Data="@_details.Files" TItem="DatabaseFileInfo">
                         <Columns>
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Name" Title="Name" />
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Type" Title="Type" />
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="SizeInMB" Title="Size (MB)" />
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="MaxSizeInMB" Title="Max Size (MB)" />
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="PhysicalName" Title="Physical Path" />
-                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Title="Growth">
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Name" Title="Tên" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="Type" Title="Loại" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="SizeInMB" Title="Kích Thước (MB)" />
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Property="MaxSizeInMB" Title="Kích Thước Tối Đa (MB)" Width="200px"/>
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" 
+                                  Property="PhysicalName" 
+                                  Title="Đường Dẫn" 
+                                  />
+
+                            <RadzenDataGridColumn TItem="DatabaseFileInfo" Title="Tăng Trưởng">
                                 <Template Context="file">
                                     @(file.Growth + (file.IsPercentGrowth ? "%" : " MB"))
                                 </Template>

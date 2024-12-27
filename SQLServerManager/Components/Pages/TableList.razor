@@ -60,7 +60,7 @@
                         <th>Table Name</th>
                         <th>Rows</th>
                         <th>Size</th>
-                        <th>Created Date</th>
+                        <th >Created Date</th>
                         <th class="action-column" style="width: 80px;">Actions</th> <!-- Thay đổi chiều rộng -->
                     </tr>
                 </thead>
@@ -75,17 +75,24 @@
                             <td>@table.CreateDate.ToString("yyyy-MM-dd HH:mm")</td>
                             <td class="action-column">
                                 <div class="btn-group">
-                                    <button class="btn btn-primary btn-sm" @onclick="() => ViewTableData(table)">
+                                    <button class="btn btn-primary btn-sm"
+                                            @onclick="() => ViewTableData(table)"
+                                            title="Xem dữ liệu bảng">
                                         <i class="fas fa-table"></i>
                                     </button>
-                                    <button class="btn btn-info btn-sm" @onclick="() => ShowColumnsModal(table)">
+                                    <button class="btn btn-info btn-sm"
+                                            @onclick="() => ShowColumnsModal(table)"
+                                            title="Hiển thị cột">
                                         <i class="fas fa-columns"></i>
                                     </button>
-                                    <button class="btn btn-danger btn-sm" @onclick="() => ConfirmAndDeleteTable(table)">
+                                    <button class="btn btn-danger btn-sm"
+                                            @onclick="() => ConfirmAndDeleteTable(table)"
+                                            title="Xác nhận xóa bảng">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
+
                         </tr>
                     }
                 </tbody>
@@ -219,7 +226,7 @@
                                             <tr>
                                                 <td>
                                                     <input type="text" class="form-control form-control-sm"
-                                                           @bind="column.Name" />
+                                                           @bind="column.Name" style="width: 180px"/>
                                                 </td>
                                                 <td>
                                                     <select class="form-select form-select-sm"
@@ -242,14 +249,15 @@
                                                     {
                                                         <input type="number" class="form-control form-control-sm"
                                                                disabled
-                                                               value="" />
+                                                               value=""
+                                                               style="width: 180px" />
                                                     }
                                                 </td>
 
                                                 <td>
-                                                    <div style="width : 20px;padding : 10px 20px 10px 40px;">
-                                                    <input type="checkbox" class="form-check-input"style="width : 80px;"
-                                                           @bind="column.IsPrimaryKey" />
+                                                    <div style="width : 55px;padding : 10px 50px 10px 30px;">
+                                                        <input type="checkbox" style="width : 80px;"
+                                                            @bind="column.IsPrimaryKey" />
                                                     </div>
 
                                                 </td>
@@ -266,7 +274,7 @@
                                             <th>Identity</th>
                                             <th>Foreign Key</th>
                                             <th>FK Reference</th>
-                                            <th>Default</th>
+                                            <th style="width:100px;">Default</th>
                                             <th></th>
 
                                         
@@ -279,19 +287,19 @@
 
                                                 <td>
                                                     <div style="width : 50px;padding : 10px 40px 10px 70px;">
-                                                    <input type="checkbox" class="form-check-input"
+                                                    <input type="checkbox" 
                                                            @bind="column.IsNullable" />
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div style ="width : 50px;padding : 10px 40px 10px 70px;">
-                                                    <input type="checkbox" class="form-check-input"
+                                                    <input type="checkbox" 
                                                            @bind="column.IsIdentity" />
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div style="width : 50px;padding : 10px 40px 10px 70px;">
-                                                    <input type="checkbox" class="form-check-input"
+                                                    <input type="checkbox" 
                                                            @bind="column.IsForeignKey"
                                                            @onclick="() => OnForeignKeyChanged(column)" />
                                                     </div>
@@ -323,9 +331,9 @@
                                                         
                                                     }
                                                 </td>
-                                                <td>
-                                                    <input type="text" class="form-control form-control-sm"
-                                                           @bind="column.DefaultValue" />
+                                                <td style="width:100px;">
+                                                    <input type="text" 
+                                                           @bind="column.DefaultValue" style="padding-right:10px;"/>
                                                 </td>
                                                 <td>
                                                 <button class="btn btn-danger btn-sm"
@@ -1041,6 +1049,7 @@
                 selectedTable.Name
             );
 
+
             // Khởi tạo dictionary trống cho record mới
             editingRecord = new Dictionary<string, object>();
 
@@ -1191,7 +1200,7 @@
     private async Task LoadData(CancellationToken cancellationToken)
     {
         // Simulate a long-running operation
-        await Task.Delay(3000, cancellationToken);
+        await Task.Delay(2000, cancellationToken);
 
         loading = false;
     }
